@@ -18,7 +18,7 @@ locals {
 # Secrets saving
 resource "aws_secretsmanager_secret" "dbuser" {
   depends_on = [module.this]
-  name       = "${local.secret_store_path}/${var.settings.engine_type}/${local.db_name}/${local.master_username}/username"
+  name       = "${local.secret_store_path}/${var.settings.engine_type}/${local.db_name}/master_username"
   tags       = local.all_tags
 }
 
@@ -29,7 +29,7 @@ resource "aws_secretsmanager_secret_version" "dbuser" {
 
 resource "aws_secretsmanager_secret" "randompass" {
   depends_on = [module.this]
-  name       = "${local.secret_store_path}/${var.settings.engine_type}/${local.db_name}/${local.master_username}/password"
+  name       = "${local.secret_store_path}/${var.settings.engine_type}/${local.db_name}/master_password"
   tags       = local.all_tags
 }
 
