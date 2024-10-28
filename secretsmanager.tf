@@ -40,7 +40,7 @@ resource "aws_secretsmanager_secret_version" "randompass" {
 
 # Secrets saving
 resource "aws_secretsmanager_secret" "rds" {
-  name = "${local.secret_store_path}/${module.this.db_instance_identifier}//${var.settings.engine_type}/${local.db_name}/rds-credentials"
+  name = "${local.secret_store_path}/${module.this.db_instance_identifier}/${var.settings.engine_type}/${local.db_name}/rds-credentials"
   tags = local.all_tags
 }
 
