@@ -6,6 +6,7 @@
 locals {
   rds_port        = try(var.settings.port, 10001)
   master_username = try(var.settings.master_username, "admin")
+  db_name         = try(var.settings.database_name, "cluster_db")
 }
 
 # Provisions RDS instance only if rds_provision=true
@@ -15,14 +16,14 @@ module "this" {
     aws_security_group.this
   ]
   source                              = "terraform-aws-modules/rds/aws"
-  version                             = "6.8.0"
+  version                             = "6.10.0"
   identifier                          = "rds-db-${var.settings.name_prefix}-${local.system_name}"
   engine                              = var.settings.engine_type
   engine_version                      = var.settings.engine_version
   availability_zone                   = try(var.settings.availability_zones[0], null)
   instance_class                      = var.settings.instance_size
   allocated_storage                   = try(var.settings.storage_size, null)
-  db_name                             = var.settings.database_name
+  db_name                             = local.db_name
   username                            = local.master_username
   password                            = random_password.randompass.result
   manage_master_user_password         = false
