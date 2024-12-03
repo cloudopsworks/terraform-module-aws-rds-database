@@ -38,3 +38,15 @@ output "rds_instance_username" {
   value     = module.this.db_instance_username
   sensitive = true
 }
+
+output "cluster_secrets_admin_user" {
+  value = aws_secretsmanager_secret.dbuser.name
+}
+
+output "cluster_secrets_admin_password" {
+  value = aws_secretsmanager_secret.randompass.name
+}
+
+output "cluster_secrets_credentials" {
+  value = aws_secretsmanager_secret.rds.name
+}
