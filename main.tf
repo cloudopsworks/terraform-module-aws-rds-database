@@ -45,5 +45,6 @@ module "this" {
   final_snapshot_identifier_prefix    = "rds-db-${var.settings.name_prefix}-${local.system_name}-final-snap"
   deletion_protection                 = try(var.settings.deletion_protection, false)
   apply_immediately                   = try(var.settings.apply_immediately, true)
+  auto_minor_version_upgrade          = try(var.settings.auto_minor_upgrade, false)
   tags                                = local.all_tags
 }
