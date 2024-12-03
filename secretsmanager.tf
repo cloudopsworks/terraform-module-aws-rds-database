@@ -9,7 +9,7 @@ locals {
     username            = local.master_username
     password            = random_password.randompass.result
     engine              = module.this.db_instance_engine
-    host                = module.this.db_instance_endpoint
+    host                = module.this.db_instance_address
     port                = module.this.db_instance_port
     dbClusterIdentifier = module.this.db_instance_identifier
   }
