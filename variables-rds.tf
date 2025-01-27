@@ -28,6 +28,7 @@
 #   parameters: []
 #   options: []
 #   restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
+#   managed_password_rotation: false
 variable "settings" {
   description = "Settings for RDS instance"
   type        = any
