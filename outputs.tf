@@ -4,11 +4,12 @@
 #            Distributed Under Apache v2.0 License
 #
 
-output "rds_password" {
-  description = "The password for the RDS instance"
-  value       = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
-  sensitive   = true
-}
+# output "rds_password" {
+#   description = "The password for the RDS instance"
+#   value       = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
+#   sensitive   = true
+# }
+# RDS Password will not be exposed by any means
 
 output "rds_security_group_ids" {
   value = local.security_group_ids
