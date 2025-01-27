@@ -10,10 +10,12 @@
 
 [![cloudopsworks][logo]](https://cloudops.works/)
 
-# Terraform AWS RDS Database Module
+# Terraform Module: AWS RDS Database
 
 
-VPC Module for setting up AWS RDS Databse.
+This module provisions and manages an AWS RDS database instance with
+various options including user credentials, networking configurations,
+backup, and monitoring settings.
 
 
 ---
@@ -46,10 +48,125 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 
 
+## Introduction
+
+The terraform-module-aws-rds-database is designed to facilitate
+the provisioning of an AWS RDS instance using Terraform. This module 
+handles all of the essential configurations for an RDS instance, including:
+•	Creation of the DB instance
+•	Database parameter group association
+•	Security group rules
+•	(Optionally) a DNS record pointing to the RDS endpoint
+
+Additionally, a Terragrunt scaffold is provided to streamline
+the setup process, leveraging boilerplate templates found in the
+.boilerplate directory. This scaffold helps reduce repetitive code,
+offering a consistent structure for deploying this module across
+multiple environments.
+
+## Usage
+
+
+**IMPORTANT:** The `master` branch is used in `source` just as an example. In your code, do not pin to `master` because there may be breaking changes between releases.
+Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-module-aws-rds-database/releases).
+
+
+To use this Terraform module directly, reference the Git repository
+and its develop branch. Example:
+
+```hcl
+module "rds_db" { 
+  source  = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop" 
+  name    = "my-db" 
+  engine  = "mysql"
+# ... other variables 
+}
+```
+
+If you prefer Terragrunt, a scaffold is available which relies on
+a boilerplate template (.boilerplate/terragrunt.hcl.tmpl). This
+scaffold ensures consistent configuration across environments by
+automatically including:
+.	Common inputs such as region, environment, or project_name.
+.	Remote state configuration.
+. Dependency references to other modules (e.g., VPC or subnets).
+
+For example, you can create a terragrunt.hcl using the boilerplate:
+1. Copy the .boilerplate/terragrunt.hcl.tmpl to your environment folder.
+2. Update variables according to your needs (like engine, engine_version, and others).
+3. Run terragrunt init and terragrunt apply.
+
+This approach simplifies management of multiple environment configs
+by using a DRY (Don’t Repeat Yourself) pattern.
 
 
 
 
+## Examples
+
+Below are some sample configurations showcasing common scenarios:
+1.	Basic RDS Instance:
+```hcl
+module "basic_rds" {
+  source           = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
+  name             = "simple-db"
+  engine           = "mysql"
+  engine_version   = "8.0"
+  instance_class   = "db.t3.micro"
+  username         = "admin"
+  password         = "example-password"
+  allocated_storage = 20
+  publicly_accessible = false
+# other configurations...
+}
+```
+2.	Using Terragrunt Scaffold:
+•	Folder structure:
+```
+├─ envs/ 
+│  ├─ dev/
+│  │  └─ terragrunt.hcl
+│  └─ prod/
+│     └─ terragrunt.hcl
+└─ .boilerplate/
+   └─ terragrunt.hcl.tmpl
+```
+•	terragrunt.hcl (created from boilerplate):
+```hcl
+include {
+  path = find_in_parent_folders()
+}
+inputs = {
+  name               = “prod-db”
+  engine             = “postgres”
+  engine_version     = “13.7”
+  instance_class     = “db.m5.large”
+  allocated_storage  = 100
+  …
+}
+```
+•	Run:
+```bash
+cd envs/prod
+terragrunt init
+terragrunt apply
+```
+3.	RDS Instance with Enhanced Monitoring & Performance Insights:
+```hcl
+module "enhanced_rds" {
+  source                     = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
+  name                       = "enhanced-db"
+  engine                     = "mysql"
+  engine_version             = "8.0"
+  instance_class             = "db.t3.small"
+  allocated_storage          = 20
+  storage_encrypted          = true
+  performance_insights_enabled = true
+  performance_insights_retention_period = 7
+  monitoring_interval        = 60
+# ...
+}
+```
 
 
 
@@ -60,7 +177,8 @@ Available targets:
   help                                Help screen
   help/all                            Display help for all targets
   help/short                          This help short screen
-  lint                                Lint terraform code
+  lint                                Lint terraform/opentofu code
+  tag                                 Tag the current version
 
 ```
 ## Requirements
@@ -82,14 +200,18 @@ Available targets:
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.9 |
-| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | 6.8.0 |
+| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | 6.10.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
+| [aws_secretsmanager_secret.dbuser](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.randompass](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
+| [aws_secretsmanager_secret_version.dbuser](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_secretsmanager_secret_version.randompass](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret_version.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
 | [aws_vpc_security_group_ingress_rule.this_cidr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_vpc_security_group_ingress_rule.this_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
@@ -115,13 +237,16 @@ Available targets:
 
 | Name | Description |
 |------|-------------|
+| <a name="output_cluster_secrets_admin_password"></a> [cluster\_secrets\_admin\_password](#output\_cluster\_secrets\_admin\_password) | n/a |
+| <a name="output_cluster_secrets_admin_user"></a> [cluster\_secrets\_admin\_user](#output\_cluster\_secrets\_admin\_user) | n/a |
+| <a name="output_cluster_secrets_credentials"></a> [cluster\_secrets\_credentials](#output\_cluster\_secrets\_credentials) | n/a |
 | <a name="output_rds_instance_address"></a> [rds\_instance\_address](#output\_rds\_instance\_address) | n/a |
 | <a name="output_rds_instance_arn"></a> [rds\_instance\_arn](#output\_rds\_instance\_arn) | n/a |
 | <a name="output_rds_instance_endpoint"></a> [rds\_instance\_endpoint](#output\_rds\_instance\_endpoint) | n/a |
 | <a name="output_rds_instance_hosted_zone_id"></a> [rds\_instance\_hosted\_zone\_id](#output\_rds\_instance\_hosted\_zone\_id) | n/a |
+| <a name="output_rds_instance_master_user_secret"></a> [rds\_instance\_master\_user\_secret](#output\_rds\_instance\_master\_user\_secret) | n/a |
 | <a name="output_rds_instance_port"></a> [rds\_instance\_port](#output\_rds\_instance\_port) | n/a |
 | <a name="output_rds_instance_username"></a> [rds\_instance\_username](#output\_rds\_instance\_username) | n/a |
-| <a name="output_rds_password"></a> [rds\_password](#output\_rds\_password) | The password for the RDS instance |
 | <a name="output_rds_security_group_ids"></a> [rds\_security\_group\_ids](#output\_rds\_security\_group\_ids) | n/a |
 
 
@@ -156,7 +281,7 @@ Please use the [issue tracker](https://github.com/cloudopsworks/terraform-module
 
 ## Copyrights
 
-Copyright © 2024-2024 [Cloud Ops Works LLC](https://cloudops.works)
+Copyright © 2024-2025 [Cloud Ops Works LLC](https://cloudops.works)
 
 
 
@@ -235,10 +360,10 @@ This project is maintained by [Cloud Ops Works LLC][website].
   [readme_footer_link]: https://cloudops.works/readme/footer/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-rds-database&utm_content=readme_footer_link
   [readme_commercial_support_img]: https://cloudops.works/readme/commercial-support/img
   [readme_commercial_support_link]: https://cloudops.works/readme/commercial-support/link?utm_source=github&utm_medium=readme&utm_campaign=cloudopsworks/terraform-module-aws-rds-database&utm_content=readme_commercial_support_link
-  [share_twitter]: https://twitter.com/intent/tweet/?text=Terraform+AWS+RDS+Database+Module&url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
-  [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AWS+RDS+Database+Module&url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
+  [share_twitter]: https://twitter.com/intent/tweet/?text=Terraform+Module:+AWS+RDS+Database&url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
+  [share_linkedin]: https://www.linkedin.com/shareArticle?mini=true&title=Terraform+Module:+AWS+RDS+Database&url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
   [share_reddit]: https://reddit.com/submit/?url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
   [share_facebook]: https://facebook.com/sharer/sharer.php?u=https://github.com/cloudopsworks/terraform-module-aws-rds-database
   [share_googleplus]: https://plus.google.com/share?url=https://github.com/cloudopsworks/terraform-module-aws-rds-database
-  [share_email]: mailto:?subject=Terraform+AWS+RDS+Database+Module&body=https://github.com/cloudopsworks/terraform-module-aws-rds-database
+  [share_email]: mailto:?subject=Terraform+Module:+AWS+RDS+Database&body=https://github.com/cloudopsworks/terraform-module-aws-rds-database
   [beacon]: https://ga-beacon.cloudops.works/G-7XWMFVFXZT/cloudopsworks/terraform-module-aws-rds-database?pixel&cs=github&cm=readme&an=terraform-module-aws-rds-database
