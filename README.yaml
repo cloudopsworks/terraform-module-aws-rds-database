@@ -1,4 +1,4 @@
-name: Terraform AWS RDS Database Module
+name: "Terraform Module: AWS RDS Database"
 #logo: logo/logo.jpg
 
 license: "APACHE2"
@@ -11,17 +11,121 @@ copyrights:
 github_repo: cloudopsworks/terraform-module-aws-rds-database
 
 description: |-
-  VPC Module for setting up AWS RDS Databse.
+  This module provisions and manages an AWS RDS database instance with
+  various options including user credentials, networking configurations,
+  backup, and monitoring settings.
 
 # Introduction to the project
-#introduction: |-
-#  This is an introduction.
+introduction: |-
+  The terraform-module-aws-rds-database is designed to facilitate
+  the provisioning of an AWS RDS instance using Terraform. This module 
+  handles all of the essential configurations for an RDS instance, including:
+  •	Creation of the DB instance
+  •	Database parameter group association
+  •	Security group rules
+  •	(Optionally) a DNS record pointing to the RDS endpoint
+  
+  Additionally, a Terragrunt scaffold is provided to streamline
+  the setup process, leveraging boilerplate templates found in the
+  .boilerplate directory. This scaffold helps reduce repetitive code,
+  offering a consistent structure for deploying this module across
+  multiple environments.
 
 # How to use this project
-#usage: |-
+usage: |-
+  To use this Terraform module directly, reference the Git repository
+  and its develop branch. Example:
+
+  ```hcl
+  module "rds_db" { 
+    source  = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop" 
+    name    = "my-db" 
+    engine  = "mysql"
+  # ... other variables 
+  }
+  ```
+  
+  If you prefer Terragrunt, a scaffold is available which relies on
+  a boilerplate template (.boilerplate/terragrunt.hcl.tmpl). This
+  scaffold ensures consistent configuration across environments by
+  automatically including:
+  .	Common inputs such as region, environment, or project_name.
+  .	Remote state configuration.
+  . Dependency references to other modules (e.g., VPC or subnets).
+
+  For example, you can create a terragrunt.hcl using the boilerplate:
+  1. Copy the .boilerplate/terragrunt.hcl.tmpl to your environment folder.
+  2. Update variables according to your needs (like engine, engine_version, and others).
+  3. Run terragrunt init and terragrunt apply.
+  
+  This approach simplifies management of multiple environment configs
+  by using a DRY (Don’t Repeat Yourself) pattern.
 
 # Example usage
-#examples: |-
+examples: |-
+  Below are some sample configurations showcasing common scenarios:
+  1.	Basic RDS Instance:
+  ```hcl
+  module "basic_rds" {
+    source           = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
+    name             = "simple-db"
+    engine           = "mysql"
+    engine_version   = "8.0"
+    instance_class   = "db.t3.micro"
+    username         = "admin"
+    password         = "example-password"
+    allocated_storage = 20
+    publicly_accessible = false
+  # other configurations...
+  }
+  ```
+  2.	Using Terragrunt Scaffold:
+  •	Folder structure:
+  ```
+  ├─ envs/ 
+  │  ├─ dev/
+  │  │  └─ terragrunt.hcl
+  │  └─ prod/
+  │     └─ terragrunt.hcl
+  └─ .boilerplate/
+     └─ terragrunt.hcl.tmpl
+  ```
+  •	terragrunt.hcl (created from boilerplate):
+  ```hcl
+  include {
+    path = find_in_parent_folders()
+  }
+  inputs = {
+    name               = “prod-db”
+    engine             = “postgres”
+    engine_version     = “13.7”
+    instance_class     = “db.m5.large”
+    allocated_storage  = 100
+    …
+  }
+  ```
+  •	Run:
+  ```bash
+  cd envs/prod
+  terragrunt init
+  terragrunt apply
+  ```
+  3.	RDS Instance with Enhanced Monitoring & Performance Insights:
+  ```hcl
+  module "enhanced_rds" {
+    source                     = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
+    name                       = "enhanced-db"
+    engine                     = "mysql"
+    engine_version             = "8.0"
+    instance_class             = "db.t3.small"
+    allocated_storage          = 20
+    storage_encrypted          = true
+    performance_insights_enabled = true
+    performance_insights_retention_period = 7
+    monitoring_interval        = 60
+  # ...
+  }
+  ```
 
 # How to get started quickly
 #quickstart: |-
