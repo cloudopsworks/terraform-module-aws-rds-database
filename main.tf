@@ -16,7 +16,7 @@ module "this" {
     aws_security_group.this
   ]
   source                               = "terraform-aws-modules/rds/aws"
-  version                              = "6.10.0"
+  version                              = "6.11.0"
   identifier                           = "rds-db-${var.settings.name_prefix}-${local.system_name}"
   engine                               = var.settings.engine_type
   engine_version                       = var.settings.engine_version
@@ -33,6 +33,7 @@ module "this" {
   vpc_security_group_ids               = local.security_group_ids
   maintenance_window                   = try(var.settings.maintenance_window, "Mon:00:00-Mon:01:00")
   backup_window                        = try(var.settings.backup.window, "01:00-03:00")
+  backup_retention_period              = try(var.settings.backup.reteniton_period, 7)
   create_monitoring_role               = try(var.settings.monitoring.create_role, false)
   create_db_subnet_group               = false
   db_subnet_group_name                 = var.vpc.subnet_group
@@ -47,5 +48,5 @@ module "this" {
   deletion_protection                  = try(var.settings.deletion_protection, false)
   apply_immediately                    = try(var.settings.apply_immediately, true)
   auto_minor_version_upgrade           = try(var.settings.auto_minor_upgrade, false)
-  tags                                 = local.all_tags
+  tags                                 = merge(local.all_tags, local.backup_tags)
 }
