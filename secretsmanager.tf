@@ -17,7 +17,7 @@ locals {
 
 # Secrets saving
 resource "aws_secretsmanager_secret" "dbuser" {
-  count      = try(var.settings.managed_password_rotation, false) ? 1 : 0
+  count      = try(var.settings.managed_password_rotation, false) ? 0 : 1
   depends_on = [module.this]
   name       = "${local.secret_store_path}/${var.settings.engine_type}/${module.this.db_instance_identifier}/${local.db_name}/master-username"
   tags       = local.all_tags
