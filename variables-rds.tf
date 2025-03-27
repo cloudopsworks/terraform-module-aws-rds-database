@@ -18,6 +18,7 @@
 #   maintenance_window: "Mon:00:00-Mon:01:00"
 #   backup:
 #     window: "01:00-03:00"
+#     retention_period: 7
 #   monitoring:
 #     create_role: true
 #   apply_immediately: true
