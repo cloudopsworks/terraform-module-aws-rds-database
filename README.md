@@ -191,16 +191,16 @@ Available targets:
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.69.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.6.3 |
-| <a name="provider_time"></a> [time](#provider\_time) | 0.12.1 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
+| <a name="provider_random"></a> [random](#provider\_random) | n/a |
+| <a name="provider_time"></a> [time](#provider\_time) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.9 |
-| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | 6.10.0 |
+| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | 6.11.0 |
 
 ## Resources
 
