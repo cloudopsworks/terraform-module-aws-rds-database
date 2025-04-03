@@ -68,7 +68,7 @@ output "hoop_connection_mysql" {
   value = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && !try(var.settings.managed_password_rotation, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
-  --type database/postgres \
+  --type database/mysql \
   -e "HOST=_aws:${aws_secretsmanager_secret.rds[0].name}:host" \
   -e "PORT=_aws:${aws_secretsmanager_secret.rds[0].name}:port" \
   -e "USER=_aws:${aws_secretsmanager_secret.rds[0].name}:username" \
