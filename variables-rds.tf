@@ -9,7 +9,7 @@
 #   name_prefix: "mydb"
 #   database_name: "mydb"
 #   master_username: "admin"
-#   engine_type: "postgresql"
+#   engine_type: "postgresql" or "mysql" or "mariadb"  or "aurora-postgresql" or "aurora-mysql" or "mssql"
 #   engine_version: "15.5"
 #   availability_zones: ["us-east-1a", "us-east-1b"]
 #   rds_port: 5432
@@ -30,6 +30,10 @@
 #   options: []
 #   restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
 #   managed_password_rotation: false
+#   hoop:
+#     enabled: true | false
+#     agent: hoop-agent-name
+#     tags: ["tag1", "tag2"]
 variable "settings" {
   description = "Settings for RDS instance"
   type        = any

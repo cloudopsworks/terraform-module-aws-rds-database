@@ -7,6 +7,7 @@ locals {
   rds_port        = try(var.settings.port, 10001)
   master_username = try(var.settings.master_username, "admin")
   db_name         = try(var.settings.database_name, "cluster_db")
+  db_identifier   = "rds-db-${var.settings.name_prefix}-${local.system_name}"
 }
 
 # Provisions RDS instance only if rds_provision=true
@@ -17,7 +18,7 @@ module "this" {
   ]
   source                               = "terraform-aws-modules/rds/aws"
   version                              = "6.11.0"
-  identifier                           = "rds-db-${var.settings.name_prefix}-${local.system_name}"
+  identifier                           = local.db_identifier
   engine                               = var.settings.engine_type
   engine_version                       = var.settings.engine_version
   availability_zone                    = try(var.settings.availability_zones[0], null)
