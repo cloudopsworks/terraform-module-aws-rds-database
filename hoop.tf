@@ -24,7 +24,7 @@ hoop admin create connection ${local.db_identifier}-ow \
   -e "USER=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:username" \
   -e "PASS=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:password" \
   -e "DB=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:dbname" \
-  -e "SSLMODE=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:sslmode" \
+  -e "SSLMODE=prefer" \
   --overwrite \
   ${local.hoop_tags}
 EOT
