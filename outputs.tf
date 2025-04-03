@@ -40,18 +40,6 @@ output "rds_instance_username" {
   sensitive = true
 }
 
-output "cluster_secrets_admin_user" {
-  value = try(var.settings.managed_password_rotation, false) ? null : aws_secretsmanager_secret.dbuser[0].name
-}
-
-output "cluster_secrets_admin_password" {
-  value = try(var.settings.managed_password_rotation, false) ? null : aws_secretsmanager_secret.randompass[0].name
-}
-
 output "cluster_secrets_credentials" {
-  value = try(var.settings.managed_password_rotation, false) ? null : aws_secretsmanager_secret.rds[0].name
-}
-
-output "rds_instance_master_user_secret" {
-  value = try(var.settings.managed_password_rotation, false) ? module.this.db_instance_master_user_secret_arn : null
+  value = try(var.settings.managed_password_rotation, false) ? data.aws_secretsmanager_secret.rds_managed[0].name : aws_secretsmanager_secret.rds[0].name
 }
