@@ -6,12 +6,13 @@
 
 locals {
   rds_credentials = {
-    username            = local.master_username
-    password            = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
-    engine              = module.this.db_instance_engine
-    host                = module.this.db_instance_address
-    port                = module.this.db_instance_port
-    dbClusterIdentifier = module.this.db_instance_identifier
+    username             = local.master_username
+    password             = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
+    engine               = module.this.db_instance_engine
+    host                 = module.this.db_instance_address
+    port                 = module.this.db_instance_port
+    dbname               = local.db_name
+    dbInstanceIdentifier = module.this.db_instance_identifier
   }
 }
 
