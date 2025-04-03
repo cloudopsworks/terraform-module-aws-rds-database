@@ -15,7 +15,7 @@ locals {
 
 
 output "hoop_connection_postgres_managed" {
-  value = try(var.settings.hoop.enabled, false) && var.settings.engine_type == "aurora-postgresql" && try(var.settings.managed_password_rotation, false) ? (<<EOT
+  value = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && try(var.settings.managed_password_rotation, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
@@ -32,7 +32,7 @@ EOT
 }
 
 output "hoop_connection_postgres" {
-  value = try(var.settings.hoop.enabled, false) && var.settings.engine_type == "aurora-postgresql" && !try(var.settings.managed_password_rotation, false) ? (<<EOT
+  value = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && !try(var.settings.managed_password_rotation, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
@@ -49,7 +49,7 @@ EOT
 }
 
 output "hoop_connection_mysql_managed" {
-  value = try(var.settings.hoop.enabled, false) && var.settings.engine_type == "mysql" && try(var.settings.managed_password_rotation, false) ? (<<EOT
+  value = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && try(var.settings.managed_password_rotation, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/mysql \
@@ -65,7 +65,7 @@ EOT
 }
 
 output "hoop_connection_mysql" {
-  value = try(var.settings.hoop.enabled, false) && var.settings.engine_type == "mysql" && !try(var.settings.managed_password_rotation, false) ? (<<EOT
+  value = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && !try(var.settings.managed_password_rotation, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
