@@ -21,6 +21,10 @@
 #     retention_period: 7
 #   monitoring:
 #     create_role: true
+#   storage:
+#     encryption:
+#       enabled: true
+#       kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
 #   apply_immediately: true
 #   deletion_protection: true
 #   family: "postgres15"

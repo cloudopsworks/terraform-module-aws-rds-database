@@ -10,6 +10,14 @@ locals {
   db_identifier   = "rds-db-${var.settings.name_prefix}-${local.system_name}"
 }
 
+resource "random_string" "final_snapshot" {
+  length  = 10
+  special = false
+  upper   = false
+  lower   = true
+  numeric = true
+}
+
 # Provisions RDS instance only if rds_provision=true
 module "this" {
   depends_on = [
@@ -45,9 +53,11 @@ module "this" {
   options                              = try(var.settings.options, [])
   skip_final_snapshot                  = false
   snapshot_identifier                  = try(var.settings.restore_snapshot_identifier, null)
-  final_snapshot_identifier_prefix     = "rds-db-${var.settings.name_prefix}-${local.system_name}-final-snap"
+  final_snapshot_identifier_prefix     = "rds-db-${var.settings.name_prefix}-${local.system_name}-final-snap-${random_string.final_snapshot.result}"
   deletion_protection                  = try(var.settings.deletion_protection, false)
   apply_immediately                    = try(var.settings.apply_immediately, true)
   auto_minor_version_upgrade           = try(var.settings.auto_minor_upgrade, false)
+  storage_encrypted                    = try(var.settings.storage.encryption.enabled, false)
+  kms_key_id                           = try(var.settings.storage.encryption.kms_key_id, null)
   tags                                 = merge(local.all_tags, local.backup_tags)
 }
