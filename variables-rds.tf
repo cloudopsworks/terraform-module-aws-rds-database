@@ -17,6 +17,8 @@
 #   storage_size: 100
 #   maintenance_window: "Mon:00:00-Mon:01:00"
 #   backup:
+#     enabled: true | false
+#     only_tag: true | false
 #     window: "01:00-03:00"
 #     retention_period: 7
 #   monitoring:
@@ -72,4 +74,10 @@ variable "security_groups" {
   description = "Security groups for RDS instance"
   type        = any
   default     = {}
+}
+
+variable "run_hoop" {
+  description = "Run hoop with agent, be careful with this option, it will run the HOOP command in output in a null_resource"
+  type        = bool
+  default     = false
 }
