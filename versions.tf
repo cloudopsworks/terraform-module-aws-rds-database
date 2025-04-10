@@ -14,5 +14,8 @@ terraform {
     random = {
       source = "hashicorp/random"
     }
+    null = {
+      source = "hashicorp/null"
+    }
   }
 }
