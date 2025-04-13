@@ -37,6 +37,7 @@ module "this" {
   password                             = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
   manage_master_user_password          = try(var.settings.managed_password_rotation, false)
   manage_master_user_password_rotation = try(var.settings.managed_password_rotation, false)
+  master_user_secret_kms_key_id        = try(var.settings.managed_password_rotation, false) ? try(var.settings.password_secret_kms_key_id, null) : null
   port                                 = local.rds_port
   iam_database_authentication_enabled  = try(var.settings.iam.database_authentication_enabled, false)
   vpc_security_group_ids               = local.security_group_ids
