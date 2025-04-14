@@ -13,6 +13,7 @@ locals {
     port                 = module.this.db_instance_port
     dbname               = local.db_name
     dbInstanceIdentifier = module.this.db_instance_identifier
+    sslmode              = "require"
   }
 }
 
