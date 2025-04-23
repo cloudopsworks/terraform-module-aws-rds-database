@@ -5,12 +5,14 @@
 #
 
 data "aws_secretsmanager_secret" "rds_managed" {
-  count = try(var.settings.managed_password, false) ? 1 : 0
+  count = try(var.settings.managed_password, false) && try(var.settings.hoop.enabled, false) ? 1 : 0
   arn   = module.this.db_instance_master_user_secret_arn
 }
 
 locals {
-  hoop_tags = length(try(var.settings.hoop.tags, [])) > 0 ? join(" ", [for v in var.settings.hoop.tags : "--tags \"${v}\""]) : ""
+  master_user_secret_name_arn = split(":", module.this.db_instance_master_user_secret_arn)
+  master_user_secret_name     = length(local.master_user_secret_name_arn) - 1 >= 0 ? local.master_user_secret_name_arn[length(local.master_user_secret_name_arn) - 1] : ""
+  hoop_tags                   = length(try(var.settings.hoop.tags, [])) > 0 ? join(" ", [for v in var.settings.hoop.tags : "--tags \"${v}\""]) : ""
 }
 
 
