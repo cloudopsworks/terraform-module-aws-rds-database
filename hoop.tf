@@ -5,7 +5,7 @@
 #
 
 data "aws_secretsmanager_secret" "rds_managed" {
-  count = try(var.settings.managed_password_rotation, false) ? 1 : 0
+  count = try(var.settings.managed_password, false) ? 1 : 0
   arn   = module.this.db_instance_master_user_secret_arn
 }
 
@@ -15,7 +15,7 @@ locals {
 
 
 locals {
-  hoop_connection_postgres_managed = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && try(var.settings.managed_password_rotation, false) ? (<<EOT
+  hoop_connection_postgres_managed = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && try(var.settings.managed_password, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
@@ -29,7 +29,7 @@ hoop admin create connection ${local.db_identifier}-ow \
   ${local.hoop_tags}
 EOT
   ) : null
-  hoop_connection_postgres = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && !try(var.settings.managed_password_rotation, false) ? (<<EOT
+  hoop_connection_postgres = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "postgres") && !try(var.settings.managed_password, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
@@ -43,7 +43,7 @@ hoop admin create connection ${local.db_identifier}-ow \
   ${local.hoop_tags}
 EOT
   ) : null
-  hoop_connection_mysql_managed = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && try(var.settings.managed_password_rotation, false) ? (<<EOT
+  hoop_connection_mysql_managed = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && try(var.settings.managed_password, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/mysql \
@@ -56,7 +56,7 @@ hoop admin create connection ${local.db_identifier}-ow \
   ${local.hoop_tags}
 EOT
   ) : null
-  hoop_connection_mysql = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && !try(var.settings.managed_password_rotation, false) ? (<<EOT
+  hoop_connection_mysql = try(var.settings.hoop.enabled, false) && strcontains(var.settings.engine_type, "mysql") && !try(var.settings.managed_password, false) ? (<<EOT
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/mysql \

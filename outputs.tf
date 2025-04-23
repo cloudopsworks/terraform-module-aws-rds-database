@@ -6,7 +6,7 @@
 
 # output "rds_password" {
 #   description = "The password for the RDS instance"
-#   value       = try(var.settings.managed_password_rotation, false) ? null : random_password.randompass[0].result
+#   value       = try(var.settings.managed_password, false) ? null : random_password.randompass[0].result
 #   sensitive   = true
 # }
 # RDS Password will not be exposed by any means
@@ -41,5 +41,5 @@ output "rds_instance_username" {
 }
 
 output "cluster_secrets_credentials" {
-  value = try(var.settings.managed_password_rotation, false) ? data.aws_secretsmanager_secret.rds_managed[0].name : aws_secretsmanager_secret.rds[0].name
+  value = try(var.settings.managed_password, false) ? data.aws_secretsmanager_secret.rds_managed[0].name : aws_secretsmanager_secret.rds[0].name
 }
