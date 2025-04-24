@@ -21,12 +21,12 @@ locals {
 hoop admin create connection ${local.db_identifier}-ow \
   --agent ${var.settings.hoop.agent} \
   --type database/postgres \
-  -e "HOST=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:host" \
-  -e "PORT=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:port" \
+  -e "HOST=${module.this.db_instance_address}" \
+  -e "PORT=${module.this.db_instance_port}" \
   -e "USER=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:username" \
   -e "PASS=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:password" \
-  -e "DB=_aws:${data.aws_secretsmanager_secret.rds_managed[0].name}:dbname" \
-  -e "SSLMODE=prefer" \
+  -e "DB=${local.db_name}" \
+  -e "SSLMODE=require" \
   --overwrite \
   ${local.hoop_tags}
 EOT
