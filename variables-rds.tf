@@ -22,7 +22,14 @@
 #     window: "01:00-03:00"
 #     retention_period: 7
 #   monitoring:
-#     create_role: true
+#     enabled: true | false # If true, the monitoring role will be created, defaults to false
+#     interval: 60 # in seconds
+#   cloudwatch:
+#     enabled: true | false # If true, the cloudwatch role will be created, defaults to false
+#     exported_logs: ["alert","audit", "error"] # Other values: alert, audit, error, general, listener, slowquery, trace, postgresql (PostgreSQL), upgrade (PostgreSQL)
+#     skip_destroy: true | false # If true, the cloudwatch log group will not be destroyed, defaults to false
+#     retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
+#     class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
 #   storage:
 #     encryption:
 #       enabled: true
