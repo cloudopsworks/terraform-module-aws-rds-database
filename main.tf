@@ -57,7 +57,7 @@ module "this" {
   skip_final_snapshot                                    = false
   snapshot_identifier                                    = try(var.settings.restore_snapshot_identifier, null)
   final_snapshot_identifier_prefix                       = "rds-db-${var.settings.name_prefix}-${local.system_name}-final-snap-${random_string.final_snapshot.result}"
-  copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, null)
+  copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
   auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, false)
