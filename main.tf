@@ -4,10 +4,11 @@
 #            Distributed Under Apache v2.0 License
 #
 locals {
-  rds_port        = try(var.settings.port, 10001)
-  master_username = try(var.settings.master_username, "admin")
-  db_name         = try(var.settings.database_name, "cluster_db")
-  db_identifier   = "rds-db-${var.settings.name_prefix}-${local.system_name}"
+  rds_port              = try(var.settings.port, 10001)
+  master_username       = try(var.settings.master_username, "admin")
+  db_name               = try(var.settings.database_name, "cluster_db")
+  db_identifier         = "rds-db-${var.settings.name_prefix}-${local.system_name}"
+  default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["alert", "audit", "error"]
 }
 
 resource "random_string" "final_snapshot" {
@@ -67,7 +68,7 @@ module "this" {
   storage_encrypted                                      = try(var.settings.storage.encryption.enabled, false)
   kms_key_id                                             = try(var.settings.storage.encryption.kms_key_id, null)
   create_cloudwatch_log_group                            = try(var.settings.cloudwatch.enabled, false)
-  enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, ["alert", "audit", "error"])
+  enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, local.default_exported_logs)
   cloudwatch_log_group_skip_destroy                      = try(var.settings.cloudwatch.skip_destroy, false)
   cloudwatch_log_group_kms_key_id                        = try(var.settings.cloudwatch.kms_key_id, null)
   cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
