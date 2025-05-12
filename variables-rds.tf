@@ -32,6 +32,7 @@
 #   family: "postgres15"
 #   major_engine_version: "15"
 #   create_db_option_group: true
+#   copy_tags_to_snapshot: true | false # If true, the tags will be copied to the snapshot, defaults to true
 #   parameters: []
 #   options: []
 #   restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
