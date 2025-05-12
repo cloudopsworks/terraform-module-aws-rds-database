@@ -49,7 +49,7 @@ module "this" {
   create_monitoring_role                                 = try(var.settings.monitoring.enabled, false)
   monitoring_interval                                    = try(var.settings.monitoring.interval, null)
   monitoring_role_description                            = "Detailed Monitoring Role for DB ${local.db_identifier}"
-  monitoring_role_name                                   = formtat("%s-monitoring-role", local.db_identifier)
+  monitoring_role_name                                   = format("%s-monitoring-role", local.db_identifier)
   create_db_subnet_group                                 = false
   db_subnet_group_name                                   = var.vpc.subnet_group
   family                                                 = try(var.settings.family, null)
