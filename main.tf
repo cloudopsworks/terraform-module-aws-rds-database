@@ -47,6 +47,9 @@ module "this" {
   backup_window                                          = try(var.settings.backup.window, "01:00-03:00")
   backup_retention_period                                = try(var.settings.backup.reteniton_period, 7)
   create_monitoring_role                                 = try(var.settings.monitoring.create_role, false)
+  monitoring_interval                                    = try(var.settings.monitoring.interval, null)
+  monitoring_role_description                            = "Detailed Monitoring Role for DB ${local.db_identifier}"
+  monitoring_role_name                                   = formtat("%s-monitoring-role", local.db_identifier)
   create_db_subnet_group                                 = false
   db_subnet_group_name                                   = var.vpc.subnet_group
   family                                                 = try(var.settings.family, null)
@@ -56,7 +59,7 @@ module "this" {
   options                                                = try(var.settings.options, [])
   skip_final_snapshot                                    = false
   snapshot_identifier                                    = try(var.settings.restore_snapshot_identifier, null)
-  final_snapshot_identifier_prefix                       = "rds-db-${var.settings.name_prefix}-${local.system_name}-final-snap-${random_string.final_snapshot.result}"
+  final_snapshot_identifier_prefix                       = format("%s-final-snap-%s", local.db_identifier, random_string.final_snapshot.result)
   copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
