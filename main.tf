@@ -66,5 +66,11 @@ module "this" {
   auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, false)
   storage_encrypted                                      = try(var.settings.storage.encryption.enabled, false)
   kms_key_id                                             = try(var.settings.storage.encryption.kms_key_id, null)
+  create_cloudwatch_log_group                            = try(var.settings.cloudwatch.enabled, false)
+  enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, ["alert", "audit", "error"])
+  cloudwatch_log_group_skip_destroy                      = try(var.settings.cloudwatch.skip_destroy, false)
+  cloudwatch_log_group_kms_key_id                        = try(var.settings.cloudwatch.kms_key_id, null)
+  cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
+  cloudwatch_log_group_class                             = try(var.settings.cloudwatch.class, null)
   tags                                                   = merge(local.all_tags, local.backup_tags)
 }
