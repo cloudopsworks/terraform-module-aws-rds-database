@@ -48,7 +48,7 @@ module "this" {
   backup_window                                          = try(var.settings.backup.window, "01:00-03:00")
   backup_retention_period                                = try(var.settings.backup.reteniton_period, 7)
   create_monitoring_role                                 = try(var.settings.monitoring.enabled, false)
-  monitoring_interval                                    = try(var.settings.monitoring.interval, null)
+  monitoring_interval                                    = try(var.settings.monitoring.interval, 0)
   monitoring_role_description                            = "Detailed Monitoring Role for DB ${local.db_identifier}"
   monitoring_role_name                                   = format("%s-monitoring-role", local.db_identifier)
   create_db_subnet_group                                 = false
