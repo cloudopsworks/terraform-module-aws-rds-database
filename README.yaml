@@ -11,25 +11,42 @@ copyrights:
 github_repo: cloudopsworks/terraform-module-aws-rds-database
 
 description: |-
-  This module provisions and manages an AWS RDS database instance with
-  various options including user credentials, networking configurations,
-  backup, and monitoring settings.
+  This module provisions and manages an AWS RDS database instance with comprehensive 
+  configuration options. It supports multiple database engines (MySQL, PostgreSQL, 
+  MariaDB, Aurora, MSSQL), advanced security features, automated backups, monitoring 
+  integration, and credential management through AWS Secrets Manager. The module 
+  includes built-in support for custom parameter groups, option groups, and 
+  maintenance windows, making it suitable for both development and production 
+  environments.
 
 # Introduction to the project
 introduction: |-
-  The terraform-module-aws-rds-database is designed to facilitate
-  the provisioning of an AWS RDS instance using Terraform. This module 
-  handles all of the essential configurations for an RDS instance, including:
-  •	Creation of the DB instance
-  •	Database parameter group association
-  •	Security group rules
-  •	(Optionally) a DNS record pointing to the RDS endpoint
-  
-  Additionally, a Terragrunt scaffold is provided to streamline
-  the setup process, leveraging boilerplate templates found in the
-  .boilerplate directory. This scaffold helps reduce repetitive code,
-  offering a consistent structure for deploying this module across
-  multiple environments.
+  The terraform-module-aws-rds-database is a comprehensive solution for managing 
+  AWS RDS instances through Infrastructure as Code. Key features include:
+
+  • Multi-engine support (MySQL, PostgreSQL, MariaDB, Aurora, MSSQL)
+  • Automated backup management with customizable retention periods
+  • Enhanced monitoring and CloudWatch integration
+  • AWS Secrets Manager integration for credential management
+  • Automated password rotation capabilities
+  • Custom parameter and option groups management
+  • Multi-AZ deployment support
+  • Storage autoscaling configuration
+  • Performance Insights integration
+  • Security group management
+  • Custom maintenance windows
+  • DNS record management (optional)
+  • Snapshot management and restoration
+  • Encryption configuration with KMS integration
+  • Hoop integration for enhanced security
+
+  The module comes with a sophisticated Terragrunt scaffold (.boilerplate directory) 
+  that provides:
+  • Environment-specific configuration templates
+  • Standardized remote state management
+  • Dependency handling for VPC and subnet configurations
+  • Consistent variable structure across environments
+  • DRY (Don't Repeat Yourself) implementation patterns
 
 # How to use this project
 usage: |-
@@ -60,6 +77,58 @@ usage: |-
   
   This approach simplifies management of multiple environment configs
   by using a DRY (Don’t Repeat Yourself) pattern.
+
+  #### YAML Settings
+  ```yaml
+  settings:
+    name_prefix: "mydb"
+    database_name: "mydb"
+    master_username: "admin"
+    engine_type: "postgresql" or "mysql" or "mariadb"  or "aurora-postgresql" or "aurora-mysql" or "mssql"
+    engine_version: "15.5"
+    availability_zones: ["us-east-1a", "us-east-1b"]
+    rds_port: 5432
+    instance_size: "db.r5.large"
+    storage_size: 100
+    maintenance_window: "Mon:00:00-Mon:01:00"
+    backup:
+      enabled: true | false
+      only_tag: true | false
+      window: "01:00-03:00"
+      retention_period: 7
+    monitoring:
+      enabled: true | false # If true, the monitoring role will be created, defaults to false
+      interval: 60 # in seconds
+    cloudwatch:
+      enabled: true | false # If true, the cloudwatch role will be created, defaults to false
+      exported_logs: ["alert","audit", "error"] # Other values: alert, audit, error, general, listener, slowquery, trace, postgresql (PostgreSQL), upgrade (PostgreSQL)
+      skip_destroy: true | false # If true, the cloudwatch log group will not be destroyed, defaults to false
+      retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
+      class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
+    storage:
+      encryption:
+        enabled: true
+        kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+    apply_immediately: true
+    deletion_protection: true
+    family: "postgres15"
+    major_engine_version: "15"
+    create_db_option_group: true
+    copy_tags_to_snapshot: true | false # If true, the tags will be copied to the snapshot, defaults to true
+    parameters: []
+    options: []
+    restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
+    managed_password: true | false # If true, the password will be managed by AWS Secrets Manager, defaults to false
+    managed_password_rotation: true | false # If true, the password will be rotated automatically by AWS Secrets Manager, defaults to false
+    password_secret_kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" # KMS key for the password secret or Alias
+    rotation_lambda_name: "rds-rotation-lambda" # Name of the lambda function to rotate the password, required if managed_password_rotation is false
+    password_rotation_period: 90 # Rotation period in days for the password, defaults to 90days
+    rotation_duration: "1h" # Duration of the lambda function to rotate the password, defaults to 1h
+    hoop:
+      enabled: true | false
+      agent: hoop-agent-name
+      tags: ["tag1", "tag2"]
+  ```
 
 # Example usage
 examples: |-
@@ -128,7 +197,7 @@ examples: |-
   ```
 
 # How to get started quickly
-#quickstart: |-
+quickstart: |-
 
 include:
   - "docs/targets.md"

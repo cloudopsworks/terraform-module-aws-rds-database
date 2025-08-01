@@ -13,9 +13,13 @@
 # Terraform Module: AWS RDS Database
 
 
-This module provisions and manages an AWS RDS database instance with
-various options including user credentials, networking configurations,
-backup, and monitoring settings.
+This module provisions and manages an AWS RDS database instance with comprehensive 
+configuration options. It supports multiple database engines (MySQL, PostgreSQL, 
+MariaDB, Aurora, MSSQL), advanced security features, automated backups, monitoring 
+integration, and credential management through AWS Secrets Manager. The module 
+includes built-in support for custom parameter groups, option groups, and 
+maintenance windows, making it suitable for both development and production 
+environments.
 
 
 ---
@@ -50,19 +54,32 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 ## Introduction
 
-The terraform-module-aws-rds-database is designed to facilitate
-the provisioning of an AWS RDS instance using Terraform. This module 
-handles all of the essential configurations for an RDS instance, including:
-•	Creation of the DB instance
-•	Database parameter group association
-•	Security group rules
-•	(Optionally) a DNS record pointing to the RDS endpoint
+The terraform-module-aws-rds-database is a comprehensive solution for managing 
+AWS RDS instances through Infrastructure as Code. Key features include:
 
-Additionally, a Terragrunt scaffold is provided to streamline
-the setup process, leveraging boilerplate templates found in the
-.boilerplate directory. This scaffold helps reduce repetitive code,
-offering a consistent structure for deploying this module across
-multiple environments.
+• Multi-engine support (MySQL, PostgreSQL, MariaDB, Aurora, MSSQL)
+• Automated backup management with customizable retention periods
+• Enhanced monitoring and CloudWatch integration
+• AWS Secrets Manager integration for credential management
+• Automated password rotation capabilities
+• Custom parameter and option groups management
+• Multi-AZ deployment support
+• Storage autoscaling configuration
+• Performance Insights integration
+• Security group management
+• Custom maintenance windows
+• DNS record management (optional)
+• Snapshot management and restoration
+• Encryption configuration with KMS integration
+• Hoop integration for enhanced security
+
+The module comes with a sophisticated Terragrunt scaffold (.boilerplate directory) 
+that provides:
+• Environment-specific configuration templates
+• Standardized remote state management
+• Dependency handling for VPC and subnet configurations
+• Consistent variable structure across environments
+• DRY (Don't Repeat Yourself) implementation patterns
 
 ## Usage
 
@@ -98,6 +115,60 @@ For example, you can create a terragrunt.hcl using the boilerplate:
 
 This approach simplifies management of multiple environment configs
 by using a DRY (Don’t Repeat Yourself) pattern.
+
+#### YAML Settings
+```yaml
+settings:
+  name_prefix: "mydb"
+  database_name: "mydb"
+  master_username: "admin"
+  engine_type: "postgresql" or "mysql" or "mariadb"  or "aurora-postgresql" or "aurora-mysql" or "mssql"
+  engine_version: "15.5"
+  availability_zones: ["us-east-1a", "us-east-1b"]
+  rds_port: 5432
+  instance_size: "db.r5.large"
+  storage_size: 100
+  maintenance_window: "Mon:00:00-Mon:01:00"
+  backup:
+    enabled: true | false
+    only_tag: true | false
+    window: "01:00-03:00"
+    retention_period: 7
+  monitoring:
+    enabled: true | false # If true, the monitoring role will be created, defaults to false
+    interval: 60 # in seconds
+  cloudwatch:
+    enabled: true | false # If true, the cloudwatch role will be created, defaults to false
+    exported_logs: ["alert","audit", "error"] # Other values: alert, audit, error, general, listener, slowquery, trace, postgresql (PostgreSQL), upgrade (PostgreSQL)
+    skip_destroy: true | false # If true, the cloudwatch log group will not be destroyed, defaults to false
+    retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
+    class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
+  storage:
+    encryption:
+      enabled: true
+      kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+  apply_immediately: true
+  deletion_protection: true
+  family: "postgres15"
+  major_engine_version: "15"
+  create_db_option_group: true
+  copy_tags_to_snapshot: true | false # If true, the tags will be copied to the snapshot, defaults to true
+  parameters: []
+  options: []
+  restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
+  managed_password: true | false # If true, the password will be managed by AWS Secrets Manager, defaults to false
+  managed_password_rotation: true | false # If true, the password will be rotated automatically by AWS Secrets Manager, defaults to false
+  password_secret_kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" # KMS key for the password secret or Alias
+  rotation_lambda_name: "rds-rotation-lambda" # Name of the lambda function to rotate the password, required if managed_password_rotation is false
+  password_rotation_period: 90 # Rotation period in days for the password, defaults to 90days
+  rotation_duration: "1h" # Duration of the lambda function to rotate the password, defaults to 1h
+  hoop:
+    enabled: true | false
+    agent: hoop-agent-name
+    tags: ["tag1", "tag2"]
+```
+
+## Quick Start
 
 
 
@@ -186,38 +257,46 @@ Available targets:
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.4 |
+| <a name="requirement_null"></a> [null](#requirement\_null) | ~> 3.1 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 5.69.0 |
-| <a name="provider_random"></a> [random](#provider\_random) | 3.6.3 |
-| <a name="provider_time"></a> [time](#provider\_time) | 0.12.1 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.7.0 |
+| <a name="provider_null"></a> [null](#provider\_null) | 3.2.4 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
+| <a name="provider_time"></a> [time](#provider\_time) | 0.13.1 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
 | <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.9 |
-| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | 6.10.0 |
+| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | ~> 6.11 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [aws_secretsmanager_secret.dbuser](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
-| [aws_secretsmanager_secret.randompass](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
-| [aws_secretsmanager_secret_version.dbuser](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
-| [aws_secretsmanager_secret_version.randompass](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
+| [aws_secretsmanager_secret_rotation.user](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
 | [aws_vpc_security_group_ingress_rule.this_cidr](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [aws_vpc_security_group_ingress_rule.this_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
+| [null_resource.hoop_connection_mysql](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.hoop_connection_mysql_managed](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.hoop_connection_postgres](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
+| [null_resource.hoop_connection_postgres_managed](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_password.randompass](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
+| [random_string.final_snapshot](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [time_rotating.randompass](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/rotating) | resource |
+| [aws_lambda_function.rotation_function](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lambda_function) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+| [aws_secretsmanager_secret.rds_managed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret) | data source |
 | [aws_security_group.allow_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
 
@@ -228,6 +307,7 @@ Available targets:
 | <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | n/a | `map(string)` | `{}` | no |
 | <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | Establish this is a HUB or spoke configuration | `bool` | `false` | no |
 | <a name="input_org"></a> [org](#input\_org) | n/a | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
+| <a name="input_run_hoop"></a> [run\_hoop](#input\_run\_hoop) | Run hoop with agent, be careful with this option, it will run the HOOP command in output in a null\_resource | `bool` | `false` | no |
 | <a name="input_security_groups"></a> [security\_groups](#input\_security\_groups) | Security groups for RDS instance | `any` | `{}` | no |
 | <a name="input_settings"></a> [settings](#input\_settings) | Settings for RDS instance | `any` | `{}` | no |
 | <a name="input_spoke_def"></a> [spoke\_def](#input\_spoke\_def) | n/a | `string` | `"001"` | no |
@@ -237,16 +317,20 @@ Available targets:
 
 | Name | Description |
 |------|-------------|
-| <a name="output_cluster_secrets_admin_password"></a> [cluster\_secrets\_admin\_password](#output\_cluster\_secrets\_admin\_password) | n/a |
-| <a name="output_cluster_secrets_admin_user"></a> [cluster\_secrets\_admin\_user](#output\_cluster\_secrets\_admin\_user) | n/a |
-| <a name="output_cluster_secrets_credentials"></a> [cluster\_secrets\_credentials](#output\_cluster\_secrets\_credentials) | n/a |
+| <a name="output_hoop_connection_mysql"></a> [hoop\_connection\_mysql](#output\_hoop\_connection\_mysql) | n/a |
+| <a name="output_hoop_connection_mysql_managed"></a> [hoop\_connection\_mysql\_managed](#output\_hoop\_connection\_mysql\_managed) | n/a |
+| <a name="output_hoop_connection_postgres"></a> [hoop\_connection\_postgres](#output\_hoop\_connection\_postgres) | n/a |
+| <a name="output_hoop_connection_postgres_managed"></a> [hoop\_connection\_postgres\_managed](#output\_hoop\_connection\_postgres\_managed) | n/a |
+| <a name="output_rds_enhanced_monitoring_iam_role_arn"></a> [rds\_enhanced\_monitoring\_iam\_role\_arn](#output\_rds\_enhanced\_monitoring\_iam\_role\_arn) | n/a |
+| <a name="output_rds_enhanced_monitoring_iam_role_name"></a> [rds\_enhanced\_monitoring\_iam\_role\_name](#output\_rds\_enhanced\_monitoring\_iam\_role\_name) | n/a |
 | <a name="output_rds_instance_address"></a> [rds\_instance\_address](#output\_rds\_instance\_address) | n/a |
 | <a name="output_rds_instance_arn"></a> [rds\_instance\_arn](#output\_rds\_instance\_arn) | n/a |
 | <a name="output_rds_instance_endpoint"></a> [rds\_instance\_endpoint](#output\_rds\_instance\_endpoint) | n/a |
 | <a name="output_rds_instance_hosted_zone_id"></a> [rds\_instance\_hosted\_zone\_id](#output\_rds\_instance\_hosted\_zone\_id) | n/a |
-| <a name="output_rds_instance_master_user_secret"></a> [rds\_instance\_master\_user\_secret](#output\_rds\_instance\_master\_user\_secret) | n/a |
 | <a name="output_rds_instance_port"></a> [rds\_instance\_port](#output\_rds\_instance\_port) | n/a |
 | <a name="output_rds_instance_username"></a> [rds\_instance\_username](#output\_rds\_instance\_username) | n/a |
+| <a name="output_rds_secrets_credentials"></a> [rds\_secrets\_credentials](#output\_rds\_secrets\_credentials) | n/a |
+| <a name="output_rds_secrets_credentials_arn"></a> [rds\_secrets\_credentials\_arn](#output\_rds\_secrets\_credentials\_arn) | n/a |
 | <a name="output_rds_security_group_ids"></a> [rds\_security\_group\_ids](#output\_rds\_security\_group\_ids) | n/a |
 
 
