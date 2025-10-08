@@ -45,7 +45,7 @@ module "this" {
   master_user_secret_kms_key_id                          = try(var.settings.managed_password, false) ? try(var.settings.password_secret_kms_key_id, null) : null
   master_user_password_rotation_automatically_after_days = try(var.settings.managed_password_rotation, false) ? try(var.settings.password_rotation_period, 90) : null
   master_user_password_rotation_duration                 = try(var.settings.managed_password_rotation, false) ? try(var.settings.rotation_duration, "1h") : null
-  iam_database_authentication_enabled                    = try(var.settings.iam.database_authentication_enabled, false)
+  iam_database_authentication_enabled                    = try(var.settings.iam.database_authentication_enabled, true)
   vpc_security_group_ids                                 = local.security_group_ids
   maintenance_window                                     = try(var.settings.maintenance_window, "Mon:00:00-Mon:01:00")
   backup_window                                          = try(var.settings.backup.window, "01:00-03:00")
