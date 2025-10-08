@@ -52,6 +52,8 @@
 #   rotation_lambda_name: "rds-rotation-lambda" # Name of the lambda function to rotate the password, required if managed_password_rotation is false
 #   password_rotation_period: 90 # Rotation period in days for the password, defaults to 90days
 #   rotation_duration: "1h" # Duration of the lambda function to rotate the password, defaults to 1h
+#   iam:
+#     database_authentication_enabled: true | false # Defaults to true
 #   hoop:
 #     enabled: true | false
 #     agent: hoop-agent-name
