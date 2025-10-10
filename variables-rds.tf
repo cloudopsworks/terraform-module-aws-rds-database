@@ -58,6 +58,11 @@
 #     enabled: true | false
 #     agent: hoop-agent-name
 #     tags: ["tag1", "tag2"]
+#   events:
+#     enabled: true | false
+#     sns_topic_arn: "arn:aws:sns:us-east-1:123456789012:my-sns-topic"
+#     sns_topic_name: "my-sns-topic" # Required if sns_topic_arn is not provided
+#     categories: ["availability", "deletion", "failover", "failure", "low storage", "maintenance", "notification", "read replica", "recovery", "restore", "security", "storage"]
 variable "settings" {
   description = "Settings for RDS instance"
   type        = any
