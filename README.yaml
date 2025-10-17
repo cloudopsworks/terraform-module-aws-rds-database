@@ -90,6 +90,7 @@ usage: |-
     rds_port: 5432
     instance_size: "db.r5.large"
     storage_size: 100
+    storage_max_size: 200 (optional: to enable autoextend)
     maintenance_window: "Mon:00:00-Mon:01:00"
     backup:
       enabled: true | false
@@ -128,6 +129,11 @@ usage: |-
       enabled: true | false
       agent: hoop-agent-name
       tags: ["tag1", "tag2"]
+    events:
+      enabled: true | false
+      sns_topic_arn: "arn:aws:sns:us-east-1:123456789012:my-sns-topic"
+      sns_topic_name: "my-sns-topic" # Required if sns_topic_arn is not provided
+      categories: ["availability", "deletion", "failover", "failure", "low storage", "maintenance", "notification", "read replica", "recovery", "restore", "security", "storage"]
   ```
 
 # Example usage

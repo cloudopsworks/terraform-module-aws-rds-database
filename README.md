@@ -128,6 +128,7 @@ settings:
   rds_port: 5432
   instance_size: "db.r5.large"
   storage_size: 100
+  storage_max_size: 200 (optional: to enable autoextend)
   maintenance_window: "Mon:00:00-Mon:01:00"
   backup:
     enabled: true | false
@@ -166,6 +167,11 @@ settings:
     enabled: true | false
     agent: hoop-agent-name
     tags: ["tag1", "tag2"]
+  events:
+    enabled: true | false
+    sns_topic_arn: "arn:aws:sns:us-east-1:123456789012:my-sns-topic"
+    sns_topic_name: "my-sns-topic" # Required if sns_topic_arn is not provided
+    categories: ["availability", "deletion", "failover", "failure", "low storage", "maintenance", "notification", "read replica", "recovery", "restore", "security", "storage"]
 ```
 
 ## Quick Start
@@ -281,6 +287,7 @@ Available targets:
 
 | Name | Type |
 |------|------|
+| [aws_db_event_subscription.events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_event_subscription) | resource |
 | [aws_secretsmanager_secret.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret_rotation.user](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -299,6 +306,7 @@ Available targets:
 | [aws_secretsmanager_secret.rds_managed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret) | data source |
 | [aws_security_group.allow_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
+| [aws_sns_topic.events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/sns_topic) | data source |
 
 ## Inputs
 

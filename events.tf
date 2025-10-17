@@ -13,14 +13,14 @@ locals {
 
 data "aws_sns_topic" "events" {
   count = try(var.settings.events.sns_topic_arn, "") != "" && try(var.settings.events.enabled, false) ? 1 : 0
-  name = var.settings.events.sns_topic_name
+  name  = var.settings.events.sns_topic_name
 }
 
 resource "aws_db_event_subscription" "events" {
-  count = try(var.settings.events.enabled, false) ? 1 : 0
-  name  = "${local.db_identifier}-events"
-  sns_topic = try(var.settings.events.sns_topic_arn, "") != "" ? var.settings.events.sns_topic_arn : data.aws_sns_topic.events[0].arn
-  source_type = "db-instance"
-  source_ids = [module.this.db_instance_identifier]
+  count            = try(var.settings.events.enabled, false) ? 1 : 0
+  name             = "${local.db_identifier}-events"
+  sns_topic        = try(var.settings.events.sns_topic_arn, "") != "" ? var.settings.events.sns_topic_arn : data.aws_sns_topic.events[0].arn
+  source_type      = "db-instance"
+  source_ids       = [module.this.db_instance_identifier]
   event_categories = try(var.settings.events.categories, local.default_event_categories)
 }
