@@ -14,14 +14,6 @@ locals {
   default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["alert", "audit", "error"]
 }
 
-resource "random_string" "final_snapshot" {
-  length  = 10
-  special = false
-  upper   = false
-  lower   = true
-  numeric = true
-}
-
 # Provisions RDS instance only if rds_provision=true
 module "this" {
   depends_on = [
