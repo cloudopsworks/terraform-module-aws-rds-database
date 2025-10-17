@@ -145,9 +145,16 @@ settings:
     retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
     class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
   storage:
+    type: gp2 | gp3 | io1 | io2    # defaults to gp3
+    throughput: 100 # in MB/s, only for gp3
+    iops: 3000 # only for io1 and io2
     encryption:
       enabled: true
       kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+  performance_insights:
+    enabled: true | false    # defaults to false
+    kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+    retention_period: 15
   apply_immediately: true
   deletion_protection: true
   family: "postgres15"
@@ -299,7 +306,6 @@ Available targets:
 | [null_resource.hoop_connection_postgres](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [null_resource.hoop_connection_postgres_managed](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_password.randompass](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
-| [random_string.final_snapshot](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 | [time_rotating.randompass](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/rotating) | resource |
 | [aws_lambda_function.rotation_function](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lambda_function) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |

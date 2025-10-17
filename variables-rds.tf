@@ -35,9 +35,16 @@
 #     retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
 #     class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
 #   storage:
+#     type: gp2 | gp3 | io1 | io2    # defaults to gp3
+#     throughput: 100 # in MB/s, only for gp3
+#     iops: 3000 # only for io1 and io2
 #     encryption:
 #       enabled: true
 #       kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+#   performance_insights:
+#     enabled: true | false    # defaults to false
+#     kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
+#     retention_period: 15
 #   apply_immediately: true
 #   deletion_protection: true
 #   family: "postgres15"
