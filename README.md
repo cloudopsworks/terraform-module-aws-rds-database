@@ -128,6 +128,7 @@ settings:
   rds_port: 5432
   instance_size: "db.r5.large"
   storage_size: 100
+  storage_max_size: 200 (optional: to enable autoextend)
   maintenance_window: "Mon:00:00-Mon:01:00"
   backup:
     enabled: true | false

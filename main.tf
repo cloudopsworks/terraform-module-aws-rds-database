@@ -36,6 +36,7 @@ module "this" {
   availability_zone                                      = try(var.settings.availability_zones[0], null)
   instance_class                                         = var.settings.instance_size
   allocated_storage                                      = try(var.settings.storage_size, null)
+  max_allocated_storage                                  = try(var.settings.storage_max_size, null)
   port                                                   = local.rds_port
   db_name                                                = local.db_name
   username                                               = local.master_username
