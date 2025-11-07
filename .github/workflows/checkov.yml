@@ -63,7 +63,7 @@ jobs:
           download_external_modules: true
 
       - name: Upload Checkov results
-        if: success()
+        if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: checkov-results
