@@ -10,7 +10,7 @@ locals {
   rds_port              = try(var.settings.port, 10001)
   master_username       = try(var.settings.master_username, "admin")
   db_name               = try(var.settings.database_name, "cluster_db")
-  db_identifier         = "rds-db-${var.settings.name_prefix}-${local.system_name}"
+  db_identifier         = try(var.settings.name, "") != "" ? var.settings.name : "rds-db-${var.settings.name_prefix}-${local.system_name}"
   default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["alert", "audit", "error"]
 }
 
