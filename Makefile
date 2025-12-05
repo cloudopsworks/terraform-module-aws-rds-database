@@ -21,7 +21,7 @@ endef
 define PROVIDER_CHOMP_GCP
 provider "google" {
 }
-provider "google_beta" {
+provider "google-beta" {
 }
 endef
 define PROVIDER_CHOMP_AZURERM
