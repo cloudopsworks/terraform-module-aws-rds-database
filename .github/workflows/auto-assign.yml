@@ -20,4 +20,4 @@ jobs:
       - uses: cloudopsworks/auto-assign@v1.2.1
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          configuration-path: '.github/auto-assign.yml'
+          configuration-path: '.cloudopsworks/auto-assign.yml'

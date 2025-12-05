@@ -9,7 +9,7 @@
 SHELL := /bin/bash
 TRONADOR_AUTO_INIT := true
 GITVERSION ?= $(INSTALL_PATH)/gitversion
-PROVIDER ?= $(shell cat .github/.provider 2>/dev/null || echo "aws")
+PROVIDER ?= $(shell cat .cloudopsworks/.provider 2>/dev/null || echo "aws")
 define PROVIDER_CHOMP_AWS
 provider "aws" {
   alias = "default"
@@ -81,21 +81,21 @@ tag:: tag_local
 
 ## Initialize the project for a specific cloud provider: AWS
 init/aws:
-	@echo -n "aws" > .github/.provider
+	@echo -n "aws" > .cloudopsworks/.provider
 	@rm -f provider.temp.tf
-	@cp .cloudopsworks/aws/* .
-	@$(GIT) add .github/.provider *.tf
+	@cp .cloudopsworks/boilerplate/aws/* .
+	@$(GIT) add .cloudopsworks/.provider *.tf
 
 ## Initialize the project for a specific cloud provider: GCP
 init/gcp:
-	@echo -n "gcp" > .github/.provider
+	@echo -n "gcp" > .cloudopsworks/.provider
 	@rm -f provider.temp.tf
-	@cp .cloudopsworks/gcp/* .
-	@$(GIT) add .github/.provider *.tf
+	@cp .cloudopsworks/boilerplate/gcp/* .
+	@$(GIT) add .cloudopsworks/.provider *.tf
 
 ## Initialize the project for a specific cloud provider: Azure RM
 init/azurerm:
-	@echo -n "azurerm" > .github/.provider
+	@echo -n "azurerm" > .cloudopsworks/.provider
 	@rm -f provider.temp.tf
-	@cp .cloudopsworks/azurerm/* .
-	@$(GIT) add .github/.provider *.tf
+	@cp .cloudopsworks/boilerplate/azurerm/* .
+	@$(GIT) add .cloudopsworks/.provider *.tf
