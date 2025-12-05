@@ -21,56 +21,30 @@ on:
       - '**/*.tfvars'
       - '**/terraform.tfvars'
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 jobs:
   checkov:
     name: checkov
     runs-on: ubuntu-latest
     if: (github.actor != 'dependabot[bot]')
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Determine Checkov checks
-        id: checkov-checks
-        run: |
-          if [ -f ".github/.provider" ]; then
-            PROVIDER=$(cat .github/.provider | tr -d '\n' | tr -d '\r')
-            case $PROVIDER in
-              aws)
-                echo "checks=CKV_AWS_*,CKV2_AWS_*" >> $GITHUB_OUTPUT
-                ;;
-              gcp)
-                echo "checks=CKV_GCP_*,CKV2_GCP_*" >> $GITHUB_OUTPUT
-                ;;
-              azurerm)
-                echo "checks=CKV_AZURE_*,CKV2_AZURE_*,CKV2_ADO_*" >> $GITHUB_OUTPUT
-                ;;
-              *)
-                echo "checks=CKV_AWS_*" >> $GITHUB_OUTPUT
-                ;;
-            esac
-          else
-            echo "checks=CKV_AWS_*" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12
+      - name: Checkout w/Blueprint
+        uses: cloudopsworks/blueprints/cd/checkout@v5.10
         with:
-          framework: terraform
-          output_format: cli,sarif
-          output_file_path: checkov_results.txt,checkov_results.sarif
-          check: ${{ steps.checkov-checks.outputs.checks }}
-          download_external_modules: true
+          token: ${{ secrets.BOT_TOKEN }}
+          source_ref: ${{ github.base_ref }}
+          blueprint_ref: 'v5.10'
 
-      - name: Upload Checkov results
-        if: success() || failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: checkov-results
-          path: checkov_results.txt
+      - name: Pipeline Configuration
+        id: config
+        uses: ./bp/ci/config/terraform
 
-      - name: Upload SARIF file
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: checkov_results.sarif
+      - name: Run Checkov Checks
+        if: ${{ steps.config.outputs.checkov_enabled == 'true' }}
+        id: checkov
+        uses: ./bp/ci/scan/checkov
+
