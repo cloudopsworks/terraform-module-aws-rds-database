@@ -28,8 +28,8 @@ locals {
 
 resource "aws_security_group" "this" {
   count       = local.create_sg ? 1 : 0
-  name        = "rds-${var.settings.name_prefix}-${local.system_name}-sg"
-  description = "Security group for RDS instance - ${var.settings.name_prefix}-${local.system_name}"
+  name        = "${local.db_identifier}-sg"
+  description = "Security group for RDS instance - ${local.db_identifier}"
   vpc_id      = var.vpc.vpc_id
   egress {
     from_port   = 0
@@ -39,7 +39,7 @@ resource "aws_security_group" "this" {
   }
   tags = merge(
     local.all_tags, tomap({
-      Name = "rds-${var.settings.name_prefix}-${local.system_name}-sg"
+      Name = "${local.db_identifier}-sg"
     })
   )
   lifecycle {
