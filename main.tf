@@ -11,7 +11,7 @@ locals {
   master_username       = try(var.settings.master_username, "admin")
   db_name               = try(var.settings.database_name, "cluster_db")
   db_identifier         = try(var.settings.name, "") != "" ? var.settings.name : "rds-db-${var.settings.name_prefix}-${local.system_name}"
-  default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["alert", "audit", "error"]
+  default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["audit", "error"]
 }
 
 # Provisions RDS instance only if rds_provision=true
