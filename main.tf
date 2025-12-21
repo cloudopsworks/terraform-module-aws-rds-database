@@ -42,7 +42,7 @@ module "this" {
   vpc_security_group_ids                                 = local.security_group_ids
   maintenance_window                                     = try(var.settings.maintenance_window, "Mon:00:00-Mon:01:00")
   backup_window                                          = try(var.settings.backup.window, "01:00-03:00")
-  backup_retention_period                                = try(var.settings.backup.reteniton_period, 7)
+  backup_retention_period                                = try(var.settings.backup.retention_period, 7)
   create_monitoring_role                                 = try(var.settings.monitoring.enabled, false)
   monitoring_interval                                    = try(var.settings.monitoring.interval, 0)
   monitoring_role_description                            = "Detailed Monitoring Role for DB ${local.db_identifier}"
