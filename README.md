@@ -13,13 +13,10 @@
 # Terraform Module: AWS RDS Database
 
 
-This module provisions and manages an AWS RDS database instance with comprehensive 
-configuration options. It supports multiple database engines (MySQL, PostgreSQL, 
-MariaDB, Aurora, MSSQL), advanced security features, automated backups, monitoring 
-integration, and credential management through AWS Secrets Manager. The module 
-includes built-in support for custom parameter groups, option groups, and 
-maintenance windows, making it suitable for both development and production 
-environments.
+Professional Terraform module to provision and manage AWS RDS database instances.
+This module supports multiple database engines including MySQL, PostgreSQL, MariaDB, 
+Aurora, and MSSQL. It provides advanced features for security, monitoring, 
+backups, and integration with AWS Secrets Manager for automated credential management.
 
 
 ---
@@ -54,32 +51,17 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 ## Introduction
 
-The terraform-module-aws-rds-database is a comprehensive solution for managing 
-AWS RDS instances through Infrastructure as Code. Key features include:
+The `terraform-module-aws-rds-database` provides a robust and standardized way to 
+deploy RDS instances across different environments. It encapsulates best practices 
+for RDS deployments, including:
 
-• Multi-engine support (MySQL, PostgreSQL, MariaDB, Aurora, MSSQL)
-• Automated backup management with customizable retention periods
-• Enhanced monitoring and CloudWatch integration
-• AWS Secrets Manager integration for credential management
-• Automated password rotation capabilities
-• Custom parameter and option groups management
-• Multi-AZ deployment support
-• Storage autoscaling configuration
-• Performance Insights integration
-• Security group management
-• Custom maintenance windows
-• DNS record management (optional)
-• Snapshot management and restoration
-• Encryption configuration with KMS integration
-• Hoop integration for enhanced security
-
-The module comes with a sophisticated Terragrunt scaffold (.boilerplate directory) 
-that provides:
-• Environment-specific configuration templates
-• Standardized remote state management
-• Dependency handling for VPC and subnet configurations
-• Consistent variable structure across environments
-• DRY (Don't Repeat Yourself) implementation patterns
+• Comprehensive engine support (MySQL, PostgreSQL, MariaDB, Aurora, MSSQL)
+• Integrated security group management and VPC configuration
+• Automated credential management via AWS Secrets Manager
+• Enhanced monitoring and CloudWatch log exports
+• Performance Insights and storage autoscaling
+• Automated backups and snapshot restoration
+• Hoop integration for secure database access
 
 ## Usage
 
@@ -88,167 +70,169 @@ that provides:
 Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-module-aws-rds-database/releases).
 
 
-To use this Terraform module directly, reference the Git repository
-and its develop branch. Example:
+This module is designed to be used with Terragrunt for better environment management 
+and DRY configurations. Below is the structure and configuration for `terragrunt.hcl`.
 
-```hcl
-module "rds_db" { 
-  source  = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop" 
-  name    = "my-db" 
-  engine  = "mysql"
-# ... other variables 
-}
-```
+### Variable Structure
 
-If you prefer Terragrunt, a scaffold is available which relies on
-a boilerplate template (.boilerplate/terragrunt.hcl.tmpl). This
-scaffold ensures consistent configuration across environments by
-automatically including:
-.	Common inputs such as region, environment, or project_name.
-.	Remote state configuration.
-. Dependency references to other modules (e.g., VPC or subnets).
+| Variable | Type | Description |
+| --- | --- | --- |
+| `org` | `object` | (Required) Organization and environment details |
+| `spoke_def` | `string` | (Optional) Spoke definition, defaults to `001` |
+| `is_hub` | `bool` | (Optional) Hub configuration flag, defaults to `false` |
+| `settings` | `any` | (Required) RDS instance configuration (see YAML below) |
+| `vpc` | `any` | (Required) VPC and subnet configuration |
+| `security_groups` | `any` | (Optional) Security group configuration |
+| `extra_tags` | `map(string)` | (Optional) Extra tags for all resources |
+| `run_hoop` | `bool` | (Optional) Execute Hoop commands, defaults to `false` |
 
-For example, you can create a terragrunt.hcl using the boilerplate:
-1. Copy the .boilerplate/terragrunt.hcl.tmpl to your environment folder.
-2. Update variables according to your needs (like engine, engine_version, and others).
-3. Run terragrunt init and terragrunt apply.
+### YAML Configuration Details
 
-This approach simplifies management of multiple environment configs
-by using a DRY (Don’t Repeat Yourself) pattern.
-
-#### YAML Settings
 ```yaml
 settings:
-  name_prefix: "mydb"
-  database_name: "mydb"
-  master_username: "admin"
-  engine_type: "postgresql" or "mysql" or "mariadb"  or "aurora-postgresql" or "aurora-mysql" or "mssql"
-  engine_version: "15.5"
-  availability_zones: ["us-east-1a", "us-east-1b"]
-  rds_port: 5432
-  instance_size: "db.r5.large"
-  storage_size: 100
-  storage_max_size: 200 (optional: to enable autoextend)
-  maintenance_window: "Mon:00:00-Mon:01:00"
-  backup:
-    enabled: true | false
-    only_tag: true | false
-    window: "01:00-03:00"
-    retention_period: 7
-  monitoring:
-    enabled: true | false # If true, the monitoring role will be created, defaults to false
-    interval: 60 # in seconds
-  cloudwatch:
-    enabled: true | false # If true, the cloudwatch role will be created, defaults to false
-    exported_logs: ["alert","audit", "error"] # Other values: alert, audit, error, general, listener, slowquery, trace, postgresql (PostgreSQL), upgrade (PostgreSQL)
-    skip_destroy: true | false # If true, the cloudwatch log group will not be destroyed, defaults to false
-    retention_in_days: 7 # The retention period for the cloudwatch log group, defaults to 7 days
-    class: STANDARD | INFREQUENT_ACCESS # defaults to STANDARD
-  storage:
-    type: gp2 | gp3 | io1 | io2    # defaults to gp3
-    throughput: 100 # in MB/s, only for gp3
-    iops: 3000 # only for io1 and io2
-    encryption:
-      enabled: true
-      kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
-  performance_insights:
-    enabled: true | false    # defaults to false
-    kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/alias/aws/rds"
-    retention_period: 15
-  apply_immediately: true
-  deletion_protection: true
-  family: "postgres15"
-  major_engine_version: "15"
-  create_db_option_group: true
-  copy_tags_to_snapshot: true | false # If true, the tags will be copied to the snapshot, defaults to true
-  parameters: []
-  options: []
-  restore_snapshot_identifier: "rds-db-mydb-0001-final-snap"
-  managed_password: true | false # If true, the password will be managed by AWS Secrets Manager, defaults to false
-  managed_password_rotation: true | false # If true, the password will be rotated automatically by AWS Secrets Manager, defaults to false
-  password_secret_kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012" # KMS key for the password secret or Alias
-  rotation_lambda_name: "rds-rotation-lambda" # Name of the lambda function to rotate the password, required if managed_password_rotation is false
-  password_rotation_period: 90 # Rotation period in days for the password, defaults to 90days
-  rotation_duration: "1h" # Duration of the lambda function to rotate the password, defaults to 1h
-  hoop:
-    enabled: true | false
-    agent: hoop-agent-name
-    tags: ["tag1", "tag2"]
-  events:
-    enabled: true | false
-    sns_topic_arn: "arn:aws:sns:us-east-1:123456789012:my-sns-topic"
-    sns_topic_name: "my-sns-topic" # Required if sns_topic_arn is not provided
-    categories: ["availability", "deletion", "failover", "failure", "low storage", "maintenance", "notification", "read replica", "recovery", "restore", "security", "storage"]
+  name: "mydb"                       # (Optional) RDS instance name. Generated if not provided.
+  name_prefix: "mydb"                # (Required) Prefix for generated instance name.
+  database_name: "mydb"              # (Optional) Initial database name. Defaults to cluster_db.
+  master_username: "admin"           # (Optional) Master username. Defaults to admin.
+  engine_type: "postgresql"          # (Required) Engine: postgresql, mysql, mariadb, aurora-postgresql, aurora-mysql, mssql.
+  engine_version: "15.5"             # (Required) Engine version.
+  availability_zones:                # (Optional) List of AZs.
+    - "us-east-1a"
+    - "us-east-1b"
+  rds_port: 5432                     # (Optional) RDS port. Defaults to 10001.
+  instance_size: "db.r5.large"       # (Required) Instance class.
+  storage_size: 100                  # (Required) Allocated storage in GB.
+  storage_max_size: 200              # (Optional) Max storage for autoscaling.
+  maintenance_window: "Mon:00:00-Mon:01:00" # (Optional) Maintenance window.
+  backup:                            # (Optional) Backup settings.
+    enabled: true                    # (Optional) Enable backups. Defaults to false.
+    only_tag: true                   # (Optional) Only backup tags. Defaults to false.
+    window: "01:00-03:00"            # (Optional) Backup window.
+    retention_period: 7              # (Optional) Retention in days. Defaults to 7.
+  monitoring:                        # (Optional) Monitoring settings.
+    enabled: true                    # (Optional) Enable enhanced monitoring. Defaults to false.
+    interval: 60                     # (Optional) Interval in seconds. Defaults to 0.
+  cloudwatch:                        # (Optional) CloudWatch logs settings.
+    enabled: true                    # (Optional) Enable log exports. Defaults to false.
+    exported_logs:                   # (Optional) Logs to export.
+      - "postgresql"
+      - "upgrade"
+    skip_destroy: false              # (Optional) Skip log group destruction. Defaults to false.
+    retention_in_days: 7             # (Optional) Log retention period. Defaults to 7.
+    class: "STANDARD"                # (Optional) Log class: STANDARD, INFREQUENT_ACCESS.
+  storage:                           # (Optional) Storage configuration.
+    type: "gp3"                      # (Optional) Storage type: gp2, gp3, io1, io2. Defaults to gp3.
+    throughput: 100                  # (Optional) Throughput for gp3.
+    iops: 3000                       # (Optional) IOPS for io1/io2.
+    encryption:                      # (Optional) Encryption settings.
+      enabled: true                  # (Optional) Enable encryption. Defaults to false.
+      kms_key_id: "arn:aws:kms..."   # (Optional) KMS key for encryption.
+  performance_insights:              # (Optional) Performance Insights settings.
+    enabled: true                    # (Optional) Enable PI. Defaults to false.
+    kms_key_id: "arn:aws:kms..."     # (Optional) KMS key for PI.
+    retention_period: 15             # (Optional) Retention in days. Defaults to 7.
+  apply_immediately: true            # (Optional) Apply changes immediately. Defaults to true.
+  deletion_protection: true          # (Optional) Enable deletion protection. Defaults to false.
+  family: "postgres15"               # (Required) DB parameter group family.
+  major_engine_version: "15"         # (Required) Major engine version.
+  create_db_option_group: true       # (Optional) Create option group. Defaults to true.
+  copy_tags_to_snapshot: true        # (Optional) Copy tags to snapshots. Defaults to true.
+  parameters: []                     # (Optional) Custom DB parameters.
+  options: []                        # (Optional) Custom DB options.
+  restore_snapshot_identifier: "..." # (Optional) Snapshot to restore from.
+  managed_password: true             # (Optional) Use AWS Secrets Manager for password. Defaults to false.
+  managed_password_rotation: true    # (Optional) Enable password rotation. Defaults to false.
+  password_secret_kms_key_id: "..."  # (Optional) KMS key for password secret.
+  rotation_lambda_name: "..."        # (Optional) Custom rotation lambda name.
+  password_rotation_period: 90       # (Optional) Rotation period in days. Defaults to 90.
+  rotation_duration: "1h"            # (Optional) Rotation duration. Defaults to 1h.
+  iam:                               # (Optional) IAM settings.
+    database_authentication_enabled: true # (Optional) Enable IAM auth. Defaults to true.
+  hoop:                              # (Optional) Hoop integration.
+    enabled: true                    # (Optional) Enable Hoop. Defaults to false.
+    agent: "hoop-agent"              # (Optional) Hoop agent name.
+    tags: ["tag1"]                   # (Optional) Hoop connection tags.
+  events:                            # (Optional) Event subscriptions.
+    enabled: true                    # (Optional) Enable events. Defaults to false.
+    sns_topic_arn: "arn:aws:sns..."  # (Optional) SNS topic ARN.
+    sns_topic_name: "my-topic"       # (Optional) SNS topic name (if ARN not provided).
+    categories: ["failure", ...]     # (Optional) Event categories.
+
+vpc:
+  vpc_id: "vpc-12345678"             # (Required) Target VPC ID.
+  subnet_group: "db-subnet-group"    # (Required) Database subnet group name.
+  subnet_ids: ["subnet-1", "subnet-2"] # (Optional) Subnet IDs.
+
+security_groups:
+  create: true                       # (Optional) Create a new security group. Defaults to false.
+  name: "existing-sg"                # (Required if create=false) Existing SG name.
+  allow_cidrs: ["10.0.0.0/8"]        # (Optional) Allow access from CIDRs.
+  allow_security_groups: ["app-sg"]  # (Optional) Allow access from SGs.
 ```
 
 ## Quick Start
 
-
+1. Initialize your Terragrunt project structure.
+2. Create a `terragrunt.hcl` file in your environment directory.
+3. Define the `inputs` block with your organization, VPC, and RDS settings as shown in the examples.
+4. Run `terragrunt plan` to review the changes.
+5. Run `terragrunt apply` to provision the RDS database.
 
 
 ## Examples
 
-Below are some sample configurations showcasing common scenarios:
-1.	Basic RDS Instance:
+### Terragrunt Configuration Example
+
+`terragrunt.hcl`
 ```hcl
-module "basic_rds" {
-  source           = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
-  name             = "simple-db"
-  engine           = "mysql"
-  engine_version   = "8.0"
-  instance_class   = "db.t3.micro"
-  username         = "admin"
-  password         = "example-password"
-  allocated_storage = 20
-  publicly_accessible = false
-# other configurations...
+terraform {
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=v1.0.0"
 }
-```
-2.	Using Terragrunt Scaffold:
-•	Folder structure:
-```
-├─ envs/ 
-│  ├─ dev/
-│  │  └─ terragrunt.hcl
-│  └─ prod/
-│     └─ terragrunt.hcl
-└─ .boilerplate/
-   └─ terragrunt.hcl.tmpl
-```
-•	terragrunt.hcl (created from boilerplate):
-```hcl
+
 include {
   path = find_in_parent_folders()
 }
+
 inputs = {
-  name               = “prod-db”
-  engine             = “postgres”
-  engine_version     = “13.7”
-  instance_class     = “db.m5.large”
-  allocated_storage  = 100
-  …
-}
-```
-•	Run:
-```bash
-cd envs/prod
-terragrunt init
-terragrunt apply
-```
-3.	RDS Instance with Enhanced Monitoring & Performance Insights:
-```hcl
-module "enhanced_rds" {
-  source                     = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=develop"
-  name                       = "enhanced-db"
-  engine                     = "mysql"
-  engine_version             = "8.0"
-  instance_class             = "db.t3.small"
-  allocated_storage          = 20
-  storage_encrypted          = true
-  performance_insights_enabled = true
-  performance_insights_retention_period = 7
-  monitoring_interval        = 60
-# ...
+  org = {
+    organization_name = "myorg"
+    organization_unit = "engineering"
+    environment_type  = "production"
+    environment_name  = "prod"
+  }
+
+  vpc = {
+    vpc_id       = "vpc-0a1b2c3d4e5f6g7h8"
+    subnet_group = "prod-db-subnets"
+  }
+
+  settings = {
+    name_prefix          = "prod-webapp"
+    engine_type          = "postgresql"
+    engine_version       = "15.5"
+    family               = "postgres15"
+    major_engine_version = "15"
+    instance_size        = "db.t4g.medium"
+    storage_size         = 50
+    storage_max_size     = 100
+    
+    managed_password     = true
+    
+    monitoring = {
+      enabled  = true
+      interval = 60
+    }
+    
+    cloudwatch = {
+      enabled       = true
+      exported_logs = ["postgresql", "upgrade"]
+    }
+  }
+  
+  security_groups = {
+    create      = true
+    allow_cidrs = ["10.20.0.0/16"]
+  }
 }
 ```
 
@@ -261,6 +245,9 @@ Available targets:
   help                                Help screen
   help/all                            Display help for all targets
   help/short                          This help short screen
+  init/aws                            Initialize the project for a specific cloud provider: AWS
+  init/azurerm                        Initialize the project for a specific cloud provider: Azure RM
+  init/gcp                            Initialize the project for a specific cloud provider: GCP
   lint                                Lint terraform/opentofu code
   tag                                 Tag the current version
 
@@ -379,7 +366,7 @@ Please use the [issue tracker](https://github.com/cloudopsworks/terraform-module
 
 ## Copyrights
 
-Copyright © 2024-2025 [Cloud Ops Works LLC](https://cloudops.works)
+Copyright © 2021-2025-2025 [Cloud Ops Works LLC](https://cloudops.works)
 
 
 
