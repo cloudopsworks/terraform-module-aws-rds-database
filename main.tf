@@ -57,7 +57,7 @@ module "this" {
   skip_final_snapshot                                    = false
   snapshot_identifier                                    = try(var.settings.restore_snapshot_identifier, null)
   final_snapshot_identifier_prefix                       = "final-snap"
-  copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, true)
+  copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, var.settings.backup.copy_tags, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
   auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, false)
@@ -72,8 +72,8 @@ module "this" {
   cloudwatch_log_group_kms_key_id                        = try(var.settings.cloudwatch.kms_key_id, null)
   cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
   cloudwatch_log_group_class                             = try(var.settings.cloudwatch.class, null)
-  performance_insights_enabled                           = try(var.settings.performance_insights.enabled, false)
-  performance_insights_kms_key_id                        = try(var.settings.performance_insights.kms_key_id, null)
-  performance_insights_retention_period                  = try(var.settings.performance_insights.retention_period, null)
+  performance_insights_enabled                           = try(var.settings.performance_insights.enabled, var.settings.performance.enabled, false)
+  performance_insights_kms_key_id                        = try(var.settings.performance_insights.kms_key_id, var.settings.performance.kms_key_id, null)
+  performance_insights_retention_period                  = try(var.settings.performance_insights.retention_period, var.settings.performance.retention_period, null)
   tags                                                   = merge(local.all_tags, local.backup_tags)
 }
