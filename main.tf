@@ -60,7 +60,7 @@ module "this" {
   copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, var.settings.backup.copy_tags, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
-  auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, false)
+  auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, var.settings.allow_upgrade, false)
   storage_encrypted                                      = try(var.settings.storage.encryption.enabled, false)
   storage_type                                           = try(var.settings.storage.type, "gp3")
   storage_throughput                                     = try(var.settings.storage.throughput, null)
