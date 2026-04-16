@@ -68,10 +68,13 @@
 #   rotation_duration: "1h"            # (Optional) The duration of the lambda function to rotate the password, defaults to 1h
 #   iam:                               # (Optional) The IAM settings for the RDS instance
 #     database_authentication_enabled: true # (Optional) If true, the database authentication will be enabled, defaults to true
-#   hoop:                              # (Optional) The hoop settings for the RDS instance
+#   hoop:                              # (Optional) Hoop connection output settings for terraform-module-hoop-connection
 #     enabled: true                    # (Optional) If true, the hoop settings will be enabled, defaults to false
-#     agent: hoop-agent-name           # (Optional) The name of the hoop agent
-#     tags: ["tag1", "tag2"]           # (Optional) The tags for the hoop connection
+#     agent_id: "hoop-agent-uuid"      # (Required when enabled) Hoop agent UUID
+#     community: true                  # (Optional) Use community secret prefix (_aws:) vs enterprise (_envs/aws#); default: true
+#     import: false                    # (Optional) Import existing Hoop connection; default: false
+#     tags: {key: "value"}             # (Optional) Tags map for Hoop connection
+#     access_control: ["group"]        # (Optional) Access control groups for Hoop connection
 #   events:                            # (Optional) The events settings for the RDS instance
 #     enabled: true                    # (Optional) If true, the events settings will be enabled, defaults to false
 #     sns_topic_arn: "arn:aws:sns..."  # (Optional) The SNS topic ARN for the events
@@ -113,8 +116,3 @@ variable "security_groups" {
   default     = {}
 }
 
-variable "run_hoop" {
-  description = "Run hoop with agent, be careful with this option, it will run the HOOP command in output in a null_resource"
-  type        = bool
-  default     = false
-}
