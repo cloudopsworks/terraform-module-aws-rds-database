@@ -18,6 +18,10 @@ output "rds_security_group_ids" {
   value = local.security_group_ids
 }
 
+output "rds_instance_identifier" {
+  value = module.this.db_instance_identifier
+}
+
 output "rds_instance_arn" {
   value = module.this.db_instance_arn
 }
