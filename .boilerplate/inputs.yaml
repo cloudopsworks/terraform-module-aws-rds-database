@@ -1,18 +1,93 @@
 # Module configuration
-# Required variables
-{{- range .requiredVariables }}
-{{- if ne .Name "org"}}
-# Description {{ .Description }} , Type: {{ .Type }}
-{{ .Name }}: {{ .DefaultValuePlaceholder }}
-{{- end }}
+# All required and optional variables for terraform-module-aws-rds-database
+# Do NOT include: is_hub, spoke_def, org, extra_tags (managed by Terragrunt hierarchy)
 
-{{- end }}
-# Optional variables
-{{- range .optionalVariables }}
-{{- if ne .Name "is_hub" "spoke_def" "extra_args" }}
-# Description {{ .Description }} , Type: {{ .Type }}
-#{{ .Name }}: {{ .DefaultValue }}
-{{- end }}
+# settings:                                      # (Required) Root map for RDS instance configuration
+#   name_prefix: "mydb"                          # (Required) Name prefix used when `name` is not provided
+#   name: "mydb"                                 # (Optional) Explicit RDS instance name; overrides name_prefix
+#   database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db"
+#   master_username: "admin"                     # (Optional) Master username; default: "admin"
+#   engine_type: "postgresql"                    # (Required) Engine type: "postgresql", "mysql", "mariadb", "aurora-postgresql", "aurora-mysql", "mssql"
+#   engine_version: "15.5"                       # (Required) Engine version (e.g., "15.5" for PostgreSQL)
+#   instance_size: "db.r5.large"                 # (Required) Instance class (e.g., "db.r5.large", "db.t3.medium")
+#   storage_size: 100                            # (Required) Storage size in GB
+#   storage_max_size: 200                        # (Optional) Max storage in GB for autoscaling; default: null (disabled)
+#   family: "postgres15"                         # (Required) Parameter group family
+#   major_engine_version: "15"                   # (Required) Major engine version for option group
+#   availability_zones:                          # (Optional) AZ list; default: null
+#     - "us-east-1a"
+#     - "us-east-1b"
+#   rds_port: 5432                               # (Optional) DB port; default: 10001
+#   maintenance_window: "Mon:00:00-Mon:01:00"    # (Optional) Maintenance window; default: "Mon:00:00-Mon:01:00"
+#   apply_immediately: true                      # (Optional) Apply changes immediately; default: true
+#   deletion_protection: false                   # (Optional) Enable deletion protection; default: false
+#   copy_tags_to_snapshot: true                  # (Optional) Copy tags to snapshots; default: true
+#   create_db_option_group: true                 # (Optional) Create DB option group; default: true
+#   restore_snapshot_identifier: ""              # (Optional) Snapshot ID to restore from
+#   managed_password: false                      # (Optional) Manage password via Secrets Manager; default: false
+#   managed_password_rotation: false             # (Optional) Enable automatic password rotation; default: false
+#   password_secret_kms_key_id: ""               # (Optional) KMS key ID/alias for password secret
+#   rotation_lambda_name: ""                     # (Optional) Lambda name for password rotation
+#   password_rotation_period: 90                 # (Optional) Rotation period in days; default: 90
+#   rotation_duration: "1h"                      # (Optional) Rotation Lambda duration; default: "1h"
+#   backup:                                      # (Optional) Backup settings
+#     enabled: false                             # (Optional) Enable backups; default: false
+#     only_tag: false                            # (Optional) Only tag snapshots; default: false
+#     window: "01:00-03:00"                      # (Optional) Backup window; default: "01:00-03:00"
+#     retention_period: 7                        # (Optional) Retention days; default: 7
+#   monitoring:                                  # (Optional) Enhanced monitoring settings
+#     enabled: false                             # (Optional) Enable monitoring role; default: false
+#     interval: 0                                # (Optional) Monitoring interval seconds; default: 0 (disabled)
+#   cloudwatch:                                  # (Optional) CloudWatch log export settings
+#     enabled: false                             # (Optional) Enable CloudWatch role; default: false
+#     exported_logs:                             # (Optional) Logs to export; values: alert, audit, error, general, listener, slowquery, trace, postgresql, upgrade
+#       - "postgresql"
+#     skip_destroy: false                        # (Optional) Prevent log group deletion; default: false
+#     retention_in_days: 7                       # (Optional) Log retention days; default: 7
+#     class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
+#   storage:                                     # (Optional) Storage settings
+#     type: "gp3"                                # (Optional) Storage type: "gp2", "gp3", "io1", "io2"; default: "gp3"
+#     throughput: 125                            # (Optional) Throughput in MB/s for gp3
+#     iops: 3000                                 # (Optional) IOPS for io1/io2
+#     encryption:                                # (Optional) Storage encryption
+#       enabled: false                           # (Optional) Enable at-rest encryption; default: false
+#       kms_key_id: ""                           # (Optional) KMS key ID for encryption
+#   performance_insights:                        # (Optional) Performance Insights settings
+#     enabled: false                             # (Optional) Enable Performance Insights; default: false
+#     kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
+#     retention_period: 7                        # (Optional) PI retention days; default: 7
+#   iam:                                         # (Optional) IAM settings
+#     database_authentication_enabled: true      # (Optional) Enable IAM DB authentication; default: true
+#   hoop:                                        # (Optional) Hoop connection output settings
+#     enabled: false
+#     agent_id: ""
+#     community: true
+#     import: false
+#     tags: {}
+#     access_control: []
+#   events:                                      # (Optional) RDS event subscriptions
+#     enabled: false
+#     sns_topic_arn: ""
+#     sns_topic_name: ""
+#     categories: []
+#   parameters: []                               # (Optional) DB parameter group parameters
+#   options: []                                  # (Optional) DB option group options
+settings: {}
 
-{{- end }}
+# vpc:                                           # (Required) Networking settings for the RDS instance
+#   vpc_id: "vpc-12345678901234"                 # (Required) Target VPC ID
+#   subnet_group: "database_sg_name"             # (Required) DB subnet group name
+#   subnet_ids:                                  # (Optional) Subnet IDs (auxiliary lookups)
+#     - "subnet-abcdef123456789"
+#     - "subnet-abcdef123456781"
+#     - "subnet-abcdef123456782"
+vpc: {}
 
+# security_groups:                               # (Required) Ingress configuration for database port
+#   create: false                                # (Optional) Create SG or use existing; default: false
+#   name: "sg-rds"                               # (Required when create=false) Existing SG name
+#   allow_cidrs:                                 # (Optional) CIDR blocks allowed to connect
+#     - "10.0.0.0/16"
+#   allow_security_groups:                       # (Optional) SG names to allow ingress from
+#     - "sg-name-123456"
+security_groups: {}
