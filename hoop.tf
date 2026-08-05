@@ -25,6 +25,7 @@ locals {
 }
 
 output "hoop_connections" {
+  description = "Hoop connection definitions to be consumed by terraform-module-hoop-connection, null when settings.hoop.enabled is false"
   value = local.hoop_enabled ? {
     "owner" = {
       name           = "${local.db_identifier}-ow"

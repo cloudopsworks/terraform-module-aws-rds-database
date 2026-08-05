@@ -1,5 +1,5 @@
 ##
-# (c) 2021-2025
+# (c) 2021-2026
 #     Cloud Ops Works LLC - https://cloudops.works/
 #     Find us on:
 #       GitHub: https://github.com/cloudopsworks
@@ -21,7 +21,7 @@ module "this" {
     aws_security_group.this
   ]
   source                                                 = "terraform-aws-modules/rds/aws"
-  version                                                = "~> 6.11"
+  version                                                = "~> 7.0"
   identifier                                             = local.db_identifier
   engine                                                 = var.settings.engine_type
   engine_version                                         = var.settings.engine_version
@@ -32,7 +32,8 @@ module "this" {
   port                                                   = local.rds_port
   db_name                                                = local.db_name
   username                                               = local.master_username
-  password                                               = try(var.settings.managed_password, false) ? null : random_password.randompass[0].result
+  password_wo                                            = try(var.settings.managed_password, false) ? null : random_password.randompass[0].result
+  password_wo_version                                    = try(var.settings.managed_password, false) ? null : time_rotating.randompass[0].unix
   manage_master_user_password                            = try(var.settings.managed_password, false)
   manage_master_user_password_rotation                   = try(var.settings.managed_password_rotation, false)
   master_user_secret_kms_key_id                          = try(var.settings.managed_password, false) ? try(var.settings.password_secret_kms_key_id, null) : null
@@ -61,19 +62,19 @@ module "this" {
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
   auto_minor_version_upgrade                             = try(var.settings.auto_minor_upgrade, var.settings.allow_upgrade, false)
-  storage_encrypted                                      = try(var.settings.storage.encryption.enabled, false)
+  storage_encrypted                                      = try(var.settings.encryption.enabled, var.settings.storage.encryption.enabled, false)
   storage_type                                           = try(var.settings.storage.type, "gp3")
   storage_throughput                                     = try(var.settings.storage.throughput, null)
   iops                                                   = try(var.settings.storage.iops, null)
-  kms_key_id                                             = try(var.settings.storage.encryption.kms_key_id, null)
+  kms_key_id                                             = try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, aws_kms_key.this[0].key_id, null)
   create_cloudwatch_log_group                            = try(var.settings.cloudwatch.enabled, false)
   enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, local.default_exported_logs)
   cloudwatch_log_group_skip_destroy                      = try(var.settings.cloudwatch.skip_destroy, false)
-  cloudwatch_log_group_kms_key_id                        = try(var.settings.cloudwatch.kms_key_id, null)
+  cloudwatch_log_group_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.cloudwatch.kms_key_id, aws_kms_key.this[0].key_id, null)
   cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
   cloudwatch_log_group_class                             = try(var.settings.cloudwatch.class, null)
   performance_insights_enabled                           = try(var.settings.performance_insights.enabled, var.settings.performance.enabled, false)
-  performance_insights_kms_key_id                        = try(var.settings.performance_insights.kms_key_id, var.settings.performance.kms_key_id, null)
+  performance_insights_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.performance_insights.kms_key_id, var.settings.performance.kms_key_id, aws_kms_key.this[0].key_id, null)
   performance_insights_retention_period                  = try(var.settings.performance_insights.retention_period, var.settings.performance.retention_period, null)
   tags                                                   = merge(local.all_tags, local.backup_tags)
 }
