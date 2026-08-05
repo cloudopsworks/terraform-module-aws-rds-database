@@ -14,8 +14,8 @@
 
 
 Professional Terraform module to provision and manage AWS RDS database instances.
-This module supports multiple database engines including MySQL, PostgreSQL, MariaDB, 
-Aurora, and MSSQL. It provides advanced features for security, monitoring, 
+This module supports multiple database engines including MySQL, PostgreSQL, MariaDB,
+Aurora, and MSSQL. It provides advanced features for security, monitoring,
 backups, and integration with AWS Secrets Manager for automated credential management.
 
 
@@ -46,8 +46,8 @@ We have [*lots of terraform modules*][terraform_modules] that are Open Source an
 
 ## Introduction
 
-The `terraform-module-aws-rds-database` provides a robust and standardized way to 
-deploy RDS instances across different environments. It encapsulates best practices 
+The `terraform-module-aws-rds-database` provides a robust and standardized way to
+deploy RDS instances across different environments. It encapsulates best practices
 for RDS deployments, including:
 
 • Comprehensive engine support (MySQL, PostgreSQL, MariaDB, Aurora, MSSQL)
@@ -58,6 +58,17 @@ for RDS deployments, including:
 • Automated backups and snapshot restoration
 • Hoop integration for secure database access
 
+### Requirements and behavior notes
+
+| Topic | Detail |
+| --- | --- |
+| Terraform | `>= 1.11.1` — required by the write-only password arguments used by the upstream RDS module |
+| AWS provider | `~> 6.35` |
+| Upstream module | `terraform-aws-modules/rds/aws` `~> 7.0` |
+| Master password | When `settings.managed_password` is `false` the module generates the password and passes it to RDS through the write-only arguments `password_wo` / `password_wo_version`, so the plaintext value never lands in the Terraform state of the RDS instance. The credentials are published to a module owned Secrets Manager secret |
+| Password rotation | `settings.password_rotation_period` drives AWS Secrets Manager rotation when `settings.managed_password_rotation` is `true`, and the regeneration cadence of the module generated password otherwise |
+| Subnet group | The module never creates a DB subnet group, `vpc.subnet_group` must reference an existing one |
+
 ## Usage
 
 
@@ -65,171 +76,332 @@ for RDS deployments, including:
 Instead pin to the release tag (e.g. `?ref=vX.Y.Z`) of one of our [latest releases](https://github.com/cloudopsworks/terraform-module-aws-rds-database/releases).
 
 
-This module is designed to be used with Terragrunt for better environment management 
-and DRY configurations. Below is the structure and configuration for `terragrunt.hcl`.
+This module is consumed with Terragrunt. A new deployment is bootstrapped with the
+Terragrunt `scaffold` command, which sources `.boilerplate/boilerplate.yml` from this
+repository and renders `terragrunt.hcl`, `inputs.yaml` and `local-tags.json` into the
+current working directory.
 
-### Variable Structure
+### 1. Scaffold the deployment
+
+```sh
+# 1. Create and enter the target deployment directory
+mkdir -p <environment>/<region>/<spoke>/rds-database
+cd <environment>/<region>/<spoke>/rds-database
+
+# 2. Scaffold the module (do NOT use --working-dir)
+terragrunt scaffold github.com/cloudopsworks/terraform-module-aws-rds-database
+
+# 3. Edit inputs.yaml with deployment-specific values
+#    (all keys and comments are pre-populated from .boilerplate/inputs.yaml)
+vi inputs.yaml
+
+# 4. Apply
+terragrunt apply
+```
+
+Scaffold prompts for the boilerplate variables below:
 
 | Variable | Type | Description |
 | --- | --- | --- |
-| `org` | `object` | (Required) Organization and environment details |
-| `spoke_def` | `string` | (Optional) Spoke definition, defaults to `001` |
-| `is_hub` | `bool` | (Optional) Hub configuration flag, defaults to `false` |
-| `settings` | `any` | (Required) RDS instance configuration (see YAML below) |
-| `vpc` | `any` | (Required) VPC and subnet configuration |
-| `security_groups` | `any` | (Optional) Security group configuration |
-| `extra_tags` | `map(string)` | (Optional) Extra tags for all resources |
-| `run_hoop` | `bool` | (Optional) Execute Hoop commands, defaults to `false` |
+| `is_hub` | `bool` | (Optional) Is this a hub configuration? Default: `false` |
+| `tags` | `map` | (Optional) Local tags written to `local-tags.json`. Default: `{}` |
+| `vpc_enabled` | `bool` | (Optional) Wire the VPC dependency block. Default: `true` |
+| `vpc_path` | `string` | (Optional) Relative path to the VPC deployment. Default: `../vpc` |
+| `subnet_type` | `enum` | (Optional) Subnet family to consume: `database`, `private`, `intra`. Default: `database` |
 
-### YAML Configuration Details
+### 2. Module variables
+
+| Variable | Type | Description |
+| --- | --- | --- |
+| `org` | `object` | (Required) Organization and environment details, sourced from `env-inputs.yaml` |
+| `spoke_def` | `string` | (Optional) Spoke ID, 3 digit string, sourced from `spoke-inputs.yaml`. Default: `001` |
+| `is_hub` | `bool` | (Optional) Hub configuration flag, injected by the boilerplate. Default: `false` |
+| `settings` | `any` | (Required) RDS instance configuration, see `inputs.yaml` below. Default: `{}` |
+| `vpc` | `any` | (Required) VPC and subnet group configuration, wired from the VPC dependency. Default: `{}` |
+| `security_groups` | `any` | (Required) Security group configuration. Default: `{}` |
+| `extra_tags` | `map(string)` | (Optional) Extra tags for all resources, built from the merged tag files. Default: `{}` |
+
+### 3. Generated `inputs.yaml`
 
 ```yaml
-settings:
-  name: "mydb"                       # (Optional) RDS instance name. Generated if not provided.
-  name_prefix: "mydb"                # (Required) Prefix for generated instance name.
-  database_name: "mydb"              # (Optional) Initial database name. Defaults to cluster_db.
-  master_username: "admin"           # (Optional) Master username. Defaults to admin.
-  engine_type: "postgresql"          # (Required) Engine: postgresql, mysql, mariadb, aurora-postgresql, aurora-mysql, mssql.
-  engine_version: "15.5"             # (Required) Engine version.
-  availability_zones:                # (Optional) List of AZs.
+settings:                                      # (Required) Root map for RDS instance configuration
+  name_prefix: "mydb"                          # (Required) Name prefix used when `name` is not provided
+  name: "mydb"                                 # (Optional) Explicit RDS instance name; overrides name_prefix
+  database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db"
+  master_username: "admin"                     # (Optional) Master username; default: "admin"
+  engine_type: "postgresql"                    # (Required) Engine type: "postgresql", "mysql", "mariadb", "aurora-postgresql", "aurora-mysql", "mssql"
+  engine_version: "15.5"                       # (Required) Engine version (e.g., "15.5" for PostgreSQL)
+  instance_size: "db.r5.large"                 # (Required) Instance class (e.g., "db.r5.large", "db.t3.medium")
+  storage_size: 100                            # (Required) Storage size in GB
+  storage_max_size: 200                        # (Optional) Max storage in GB for autoscaling; default: null (disabled)
+  family: "postgres15"                         # (Required) Parameter group family
+  major_engine_version: "15"                   # (Required) Major engine version for option group
+  availability_zones:                          # (Optional) AZ list, only the first entry is used; default: null
     - "us-east-1a"
     - "us-east-1b"
-  rds_port: 5432                     # (Optional) RDS port. Defaults to 10001.
-  instance_size: "db.r5.large"       # (Required) Instance class.
-  storage_size: 100                  # (Required) Allocated storage in GB.
-  storage_max_size: 200              # (Optional) Max storage for autoscaling.
-  maintenance_window: "Mon:00:00-Mon:01:00" # (Optional) Maintenance window.
-  backup:                            # (Optional) Backup settings.
-    enabled: true                    # (Optional) Enable backups. Defaults to false.
-    only_tag: true                   # (Optional) Only backup tags. Defaults to false.
-    window: "01:00-03:00"            # (Optional) Backup window.
-    retention_period: 7              # (Optional) Retention in days. Defaults to 7.
-  monitoring:                        # (Optional) Monitoring settings.
-    enabled: true                    # (Optional) Enable enhanced monitoring. Defaults to false.
-    interval: 60                     # (Optional) Interval in seconds. Defaults to 0.
-  cloudwatch:                        # (Optional) CloudWatch logs settings.
-    enabled: true                    # (Optional) Enable log exports. Defaults to false.
-    exported_logs:                   # (Optional) Logs to export.
-      - "postgresql"
-      - "upgrade"
-    skip_destroy: false              # (Optional) Skip log group destruction. Defaults to false.
-    retention_in_days: 7             # (Optional) Log retention period. Defaults to 7.
-    class: "STANDARD"                # (Optional) Log class: STANDARD, INFREQUENT_ACCESS.
-  storage:                           # (Optional) Storage configuration.
-    type: "gp3"                      # (Optional) Storage type: gp2, gp3, io1, io2. Defaults to gp3.
-    throughput: 100                  # (Optional) Throughput for gp3.
-    iops: 3000                       # (Optional) IOPS for io1/io2.
-    encryption:                      # (Optional) Encryption settings.
-      enabled: true                  # (Optional) Enable encryption. Defaults to false.
-      kms_key_id: "arn:aws:kms..."   # (Optional) KMS key for encryption.
-  performance_insights:              # (Optional) Performance Insights settings.
-    enabled: true                    # (Optional) Enable PI. Defaults to false.
-    kms_key_id: "arn:aws:kms..."     # (Optional) KMS key for PI.
-    retention_period: 15             # (Optional) Retention in days. Defaults to 7.
-  apply_immediately: true            # (Optional) Apply changes immediately. Defaults to true.
-  deletion_protection: true          # (Optional) Enable deletion protection. Defaults to false.
-  family: "postgres15"               # (Required) DB parameter group family.
-  major_engine_version: "15"         # (Required) Major engine version.
-  create_db_option_group: true       # (Optional) Create option group. Defaults to true.
-  copy_tags_to_snapshot: true        # (Optional) Copy tags to snapshots. Defaults to true.
-  parameters: []                     # (Optional) Custom DB parameters.
-  options: []                        # (Optional) Custom DB options.
-  restore_snapshot_identifier: "..." # (Optional) Snapshot to restore from.
-  managed_password: true             # (Optional) Use AWS Secrets Manager for password. Defaults to false.
-  managed_password_rotation: true    # (Optional) Enable password rotation. Defaults to false.
-  password_secret_kms_key_id: "..."  # (Optional) KMS key for password secret.
-  rotation_lambda_name: "..."        # (Optional) Custom rotation lambda name.
-  password_rotation_period: 90       # (Optional) Rotation period in days. Defaults to 90.
-  rotation_duration: "1h"            # (Optional) Rotation duration. Defaults to 1h.
-  iam:                               # (Optional) IAM settings.
-    database_authentication_enabled: true # (Optional) Enable IAM auth. Defaults to true.
-  hoop:                              # (Optional) Hoop integration.
-    enabled: true                    # (Optional) Enable Hoop. Defaults to false.
-    agent: "hoop-agent"              # (Optional) Hoop agent name.
-    tags: ["tag1"]                   # (Optional) Hoop connection tags.
-  events:                            # (Optional) Event subscriptions.
-    enabled: true                    # (Optional) Enable events. Defaults to false.
-    sns_topic_arn: "arn:aws:sns..."  # (Optional) SNS topic ARN.
-    sns_topic_name: "my-topic"       # (Optional) SNS topic name (if ARN not provided).
-    categories: ["failure", ...]     # (Optional) Event categories.
+  port: 5432                                   # (Optional) DB port; default: 10001
+  maintenance_window: "Mon:00:00-Mon:01:00"    # (Optional) Maintenance window; default: "Mon:00:00-Mon:01:00"
+  auto_minor_upgrade: false                    # (Optional) Auto-apply minor engine upgrades; default: false. Alias: allow_upgrade
+  apply_immediately: true                      # (Optional) Apply changes immediately; default: true
+  deletion_protection: false                   # (Optional) Enable deletion protection; default: false
+  copy_tags_to_snapshot: true                  # (Optional) Copy tags to snapshots; default: true. Fallback: backup.copy_tags
+  create_db_option_group: true                 # (Optional) Create DB option group; default: true
+  restore_snapshot_identifier: ""              # (Optional) Snapshot ID to restore from. Alias: recovery.snapshot_identifier
+  recovery:                                    # (Optional) Alternative location for the restore snapshot identifier
+    snapshot_identifier: ""                    # (Optional) Snapshot ID used when restore_snapshot_identifier is not set
+  managed_password: false                      # (Optional) Manage password via Secrets Manager (AWS managed); default: false.
+                                               #            When false, the module generates the password, stores it in its own
+                                               #            Secrets Manager secret and sends it to RDS as a write-only argument
+  managed_password_rotation: false             # (Optional) Enable AWS managed password rotation; default: false. Requires managed_password: true
+  password_secret_kms_key_id: ""               # (Optional) KMS key ID/alias for password secret
+  rotation_lambda_name: ""                     # (Optional) Existing Lambda name rotating the module managed secret; only when managed_password is false
+  password_rotation_period: 90                 # (Optional) Rotation period in days; default: 90. Also drives regeneration of the module managed password
+  rotation_duration: "1h"                      # (Optional) Rotation window duration; default: "1h"
+  backup:                                      # (Optional) Backup settings
+    enabled: false                             # (Optional) Enable AWS Backup tagging; default: false
+    only_tag: true                             # (Optional) Only tag the instance for an external AWS Backup plan; default: true
+    schedule: "daily"                          # (Optional) AWS Backup plan schedule tag; default: "daily"
+    window: "01:00-03:00"                      # (Optional) Backup window; default: "01:00-03:00"
+    retention_period: 7                        # (Optional) Retention days; default: 7
+    copy_tags: true                            # (Optional) Fallback for copy_tags_to_snapshot; default: true
+  monitoring:                                  # (Optional) Enhanced monitoring settings
+    enabled: false                             # (Optional) Enable monitoring role; default: false
+    interval: 0                                # (Optional) Monitoring interval seconds; default: 0 (disabled). Values: 0, 1, 5, 10, 15, 30, 60
+  cloudwatch:                                  # (Optional) CloudWatch log export settings
+    enabled: false                             # (Optional) Create the CloudWatch log group; default: false
+    exported_logs:                             # (Optional) Logs to export; values: alert, audit, error, general, listener, slowquery, trace, postgresql, upgrade
+      - "postgresql"                           #            Default: ["postgresql", "upgrade"] for postgres engines, ["audit", "error"] otherwise
+    skip_destroy: false                        # (Optional) Prevent log group deletion; default: false
+    retention_in_days: 7                       # (Optional) Log retention days; default: 7
+    kms_key_id: ""                             # (Optional) KMS key ARN encrypting the log group; default: null (AWS managed)
+    class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
+  storage:                                     # (Optional) Storage settings
+    type: "gp3"                                # (Optional) Storage type: "gp2", "gp3", "io1", "io2"; default: "gp3"
+    throughput: 125                            # (Optional) Throughput in MB/s for gp3
+    iops: 3000                                 # (Optional) IOPS for io1/io2/gp3
+    encryption:                                # (Optional) Storage encryption
+      enabled: false                           # (Optional) Enable at-rest encryption; default: false
+      kms_key_id: ""                           # (Optional) KMS key ID for encryption
+  performance_insights:                        # (Optional) Performance Insights settings. Alias: performance
+    enabled: false                             # (Optional) Enable Performance Insights; default: false
+    kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
+    retention_period: 7                        # (Optional) PI retention days; default: null (7 days on AWS). Values: 7, 731 or a multiple of 31
+  iam:                                         # (Optional) IAM settings
+    database_authentication_enabled: true      # (Optional) Enable IAM DB authentication; default: true
+  hoop:                                        # (Optional) Hoop connection output settings, consumed by terraform-module-hoop-connection
+    enabled: false                             # (Optional) Emit the hoop_connections output; default: false
+    agent_id: ""                               # (Required when enabled) Hoop agent UUID
+    community: true                            # (Optional) Community secret prefix (_aws:) vs enterprise (_envs/aws#); default: true
+    import: false                              # (Optional) Import an existing Hoop connection; default: false
+    tags: {}                                   # (Optional) Tags map for the Hoop connection; default: {}
+    access_control: []                         # (Optional) Access control groups for the Hoop connection; default: []
+  events:                                      # (Optional) RDS event subscriptions
+    enabled: false                             # (Optional) Create the event subscription; default: false
+    sns_topic_arn: ""                          # (Optional) Target SNS topic ARN
+    sns_topic_name: ""                         # (Optional) Target SNS topic name, required when sns_topic_arn is not provided
+    categories: []                             # (Optional) Event categories; default: ["availability", "failover", "failure", "maintenance", "low storage"]
+                                               #            Values: availability, deletion, failover, failure, low storage, maintenance,
+                                               #            notification, read replica, recovery, restore, security, storage
+  parameters: []                               # (Optional) DB parameter group parameters
+  options: []                                  # (Optional) DB option group options
 
-vpc:
-  vpc_id: "vpc-12345678"             # (Required) Target VPC ID.
-  subnet_group: "db-subnet-group"    # (Required) Database subnet group name.
-  subnet_ids: ["subnet-1", "subnet-2"] # (Optional) Subnet IDs.
+vpc:                                           # (Required) Networking settings for the RDS instance
+  vpc_id: "vpc-12345678901234"                 # (Required) VPC ID where the RDS security group is created
+  subnet_group: "database_sg_name"             # (Required) Existing DB subnet group name, the module does not create one
+  subnet_ids:                                  # (Optional) Subnet IDs, filled by the Terragrunt VPC dependency, not consumed directly
+    - "subnet-abcdef123456789"
+    - "subnet-abcdef123456781"
+    - "subnet-abcdef123456782"
 
-security_groups:
-  create: true                       # (Optional) Create a new security group. Defaults to false.
-  name: "existing-sg"                # (Required if create=false) Existing SG name.
-  allow_cidrs: ["10.0.0.0/8"]        # (Optional) Allow access from CIDRs.
-  allow_security_groups: ["app-sg"]  # (Optional) Allow access from SGs.
+security_groups:                               # (Required) Ingress configuration for database port
+  create: false                                # (Optional) Create SG or use existing; default: false
+  name: "sg-rds"                               # (Required when create=false) Existing SG name
+  allow_cidrs:                                 # (Optional) CIDR blocks allowed to connect; only when create=true
+    - "10.0.0.0/16"
+  allow_security_groups:                       # (Optional) SG names to allow ingress from; only when create=true
+    - "sg-name-123456"
+```
+
+### 4. Generated `terragrunt.hcl`
+
+The scaffold output wires `inputs.yaml` into the module through `local.local_vars`, and
+resolves the VPC values from the VPC deployment dependency when `vpc_enabled` is `true`.
+
+```hcl
+locals {
+  local_vars  = yamldecode(file("./inputs.yaml"))
+  spoke_vars  = yamldecode(file(find_in_parent_folders("spoke-inputs.yaml")))
+  region_vars = yamldecode(file(find_in_parent_folders("region-inputs.yaml")))
+  env_vars    = yamldecode(file(find_in_parent_folders("env-inputs.yaml")))
+  global_vars = yamldecode(file(find_in_parent_folders("global-inputs.yaml")))
+
+  local_tags  = jsondecode(file("./local-tags.json"))
+  spoke_tags  = jsondecode(file(find_in_parent_folders("spoke-tags.json")))
+  region_tags = jsondecode(file(find_in_parent_folders("region-tags.json")))
+  env_tags    = jsondecode(file(find_in_parent_folders("env-tags.json")))
+  global_tags = jsondecode(file(find_in_parent_folders("global-tags.json")))
+
+  tags = merge(
+    local.global_tags,
+    local.env_tags,
+    local.region_tags,
+    local.spoke_tags,
+    local.local_tags
+  )
+}
+
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
+dependency "vpc" {
+  config_path = "../vpc"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "destroy"]
+  mock_outputs = {
+    database_subnet_group_name = "database_subnet_group_name"
+    database_subnets = [
+      "subnet-abcdef123456789",
+      "subnet-abcdef123456781",
+      "subnet-abcdef123456782",
+    ]
+    vpc_id = "vpc-12345678901234"
+  }
+}
+
+terraform {
+  source = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=v1.4.0"
+}
+
+inputs = {
+  is_hub    = false
+  org       = local.env_vars.org
+  spoke_def = local.spoke_vars.spoke
+
+  settings = try(local.local_vars.settings, {})
+  vpc = {
+    vpc_id       = dependency.vpc.outputs.vpc_id
+    subnet_ids   = dependency.vpc.outputs.database_subnets
+    subnet_group = dependency.vpc.outputs.database_subnet_group_name
+  }
+  security_groups = try(local.local_vars.security_groups, {})
+
+  extra_tags = local.tags
+}
 ```
 
 ## Quick Start
 
-1. Initialize your Terragrunt project structure.
-2. Create a `terragrunt.hcl` file in your environment directory.
-3. Define the `inputs` block with your organization, VPC, and RDS settings as shown in the examples.
+1. Create the deployment directory inside your Terragrunt hierarchy and enter it.
+2. Run `terragrunt scaffold github.com/cloudopsworks/terraform-module-aws-rds-database`
+   and answer the boilerplate prompts (`vpc_enabled`, `vpc_path`, `subnet_type`, ...).
+3. Edit the generated `inputs.yaml` with the engine, sizing, networking and credential settings.
 4. Run `terragrunt plan` to review the changes.
 5. Run `terragrunt apply` to provision the RDS database.
+6. Read the master credentials from the Secrets Manager secret reported by the
+   `rds_secrets_credentials` output — the password is never exposed as a Terraform output.
 
 
 ## Examples
 
-### Terragrunt Configuration Example
+All examples below are the `inputs.yaml` produced by `terragrunt scaffold` and edited for
+the deployment. The `terragrunt.hcl` rendered by scaffold is used unchanged.
 
-`terragrunt.hcl`
-```hcl
-terraform {
-  source = "git::https://github.com/cloudopsworks/terraform-module-aws-rds-database.git?ref=v1.0.0"
-}
+### PostgreSQL with AWS managed credentials
 
-include {
-  path = find_in_parent_folders()
-}
+```yaml
+settings:
+  name_prefix: "webapp"
+  engine_type: "postgresql"
+  engine_version: "15.5"
+  family: "postgres15"
+  major_engine_version: "15"
+  instance_size: "db.t4g.medium"
+  storage_size: 50
+  storage_max_size: 100
+  port: 5432
+  deletion_protection: true
+  managed_password: true
+  managed_password_rotation: true
+  password_rotation_period: 30
+  storage:
+    type: "gp3"
+    encryption:
+      enabled: true
+  monitoring:
+    enabled: true
+    interval: 60
+  cloudwatch:
+    enabled: true
+    exported_logs:
+      - "postgresql"
+      - "upgrade"
+  performance_insights:
+    enabled: true
 
-inputs = {
-  org = {
-    organization_name = "myorg"
-    organization_unit = "engineering"
-    environment_type  = "production"
-    environment_name  = "prod"
-  }
-
-  vpc = {
-    vpc_id       = "vpc-0a1b2c3d4e5f6g7h8"
-    subnet_group = "prod-db-subnets"
-  }
-
-  settings = {
-    name_prefix          = "prod-webapp"
-    engine_type          = "postgresql"
-    engine_version       = "15.5"
-    family               = "postgres15"
-    major_engine_version = "15"
-    instance_size        = "db.t4g.medium"
-    storage_size         = 50
-    storage_max_size     = 100
-    
-    managed_password     = true
-    
-    monitoring = {
-      enabled  = true
-      interval = 60
-    }
-    
-    cloudwatch = {
-      enabled       = true
-      exported_logs = ["postgresql", "upgrade"]
-    }
-  }
-  
-  security_groups = {
-    create      = true
-    allow_cidrs = ["10.20.0.0/16"]
-  }
-}
+security_groups:
+  create: true
+  allow_cidrs:
+    - "10.20.0.0/16"
 ```
+
+### MySQL with module managed credentials and an existing security group
+
+```yaml
+settings:
+  name_prefix: "orders"
+  database_name: "orders"
+  master_username: "dbadmin"
+  engine_type: "mysql"
+  engine_version: "8.0"
+  family: "mysql8.0"
+  major_engine_version: "8.0"
+  instance_size: "db.r5.large"
+  storage_size: 200
+  port: 3306
+  managed_password: false
+  password_rotation_period: 90
+  backup:
+    enabled: true
+    only_tag: true
+    schedule: "daily"
+    retention_period: 14
+  events:
+    enabled: true
+    sns_topic_name: "dba-alerts"
+    categories:
+      - "failure"
+      - "failover"
+      - "low storage"
+
+security_groups:
+  create: false
+  name: "shared-database-sg"
+```
+
+### Exposing the database through Hoop
+
+```yaml
+settings:
+  name_prefix: "analytics"
+  engine_type: "postgresql"
+  engine_version: "16.3"
+  family: "postgres16"
+  major_engine_version: "16"
+  instance_size: "db.t4g.large"
+  storage_size: 100
+  managed_password: true
+  hoop:
+    enabled: true
+    agent_id: "0f1e2d3c-4b5a-6789-abcd-ef0123456789"
+    community: true
+    access_control:
+      - "data-team"
+    tags:
+      team: "analytics"
+```
+
+The `hoop_connections` output is then consumed by `terraform-module-hoop-connection`.
 
 
 
@@ -249,29 +421,31 @@ Available targets:
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.1 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.35 |
-| <a name="provider_random"></a> [random](#provider\_random) | n/a |
-| <a name="provider_time"></a> [time](#provider\_time) | n/a |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.57.1 |
+| <a name="provider_random"></a> [random](#provider\_random) | 3.9.0 |
+| <a name="provider_time"></a> [time](#provider\_time) | 0.14.0 |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.9 |
-| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | ~> 6.11 |
+| <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.10 |
+| <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | ~> 7.0 |
 
 ## Resources
 
 | Name | Type |
 |------|------|
 | [aws_db_event_subscription.events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_event_subscription) | resource |
+| [aws_kms_alias.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_alias) | resource |
+| [aws_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_key) | resource |
 | [aws_secretsmanager_secret.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret_rotation.user](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_rotation) | resource |
 | [aws_secretsmanager_secret_version.rds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
@@ -303,19 +477,19 @@ Available targets:
 
 | Name | Description |
 |------|-------------|
-| <a name="output_hoop_connections"></a> [hoop\_connections](#output\_hoop\_connections) | n/a |
-| <a name="output_rds_enhanced_monitoring_iam_role_arn"></a> [rds\_enhanced\_monitoring\_iam\_role\_arn](#output\_rds\_enhanced\_monitoring\_iam\_role\_arn) | n/a |
-| <a name="output_rds_enhanced_monitoring_iam_role_name"></a> [rds\_enhanced\_monitoring\_iam\_role\_name](#output\_rds\_enhanced\_monitoring\_iam\_role\_name) | n/a |
-| <a name="output_rds_instance_address"></a> [rds\_instance\_address](#output\_rds\_instance\_address) | n/a |
-| <a name="output_rds_instance_arn"></a> [rds\_instance\_arn](#output\_rds\_instance\_arn) | n/a |
-| <a name="output_rds_instance_endpoint"></a> [rds\_instance\_endpoint](#output\_rds\_instance\_endpoint) | n/a |
-| <a name="output_rds_instance_hosted_zone_id"></a> [rds\_instance\_hosted\_zone\_id](#output\_rds\_instance\_hosted\_zone\_id) | n/a |
-| <a name="output_rds_instance_identifier"></a> [rds\_instance\_identifier](#output\_rds\_instance\_identifier) | n/a |
-| <a name="output_rds_instance_port"></a> [rds\_instance\_port](#output\_rds\_instance\_port) | n/a |
-| <a name="output_rds_instance_username"></a> [rds\_instance\_username](#output\_rds\_instance\_username) | n/a |
-| <a name="output_rds_secrets_credentials"></a> [rds\_secrets\_credentials](#output\_rds\_secrets\_credentials) | n/a |
-| <a name="output_rds_secrets_credentials_arn"></a> [rds\_secrets\_credentials\_arn](#output\_rds\_secrets\_credentials\_arn) | n/a |
-| <a name="output_rds_security_group_ids"></a> [rds\_security\_group\_ids](#output\_rds\_security\_group\_ids) | n/a |
+| <a name="output_hoop_connections"></a> [hoop\_connections](#output\_hoop\_connections) | Hoop connection definitions to be consumed by terraform-module-hoop-connection, null when settings.hoop.enabled is false |
+| <a name="output_rds_enhanced_monitoring_iam_role_arn"></a> [rds\_enhanced\_monitoring\_iam\_role\_arn](#output\_rds\_enhanced\_monitoring\_iam\_role\_arn) | The ARN of the enhanced monitoring IAM role, null when settings.monitoring.enabled is false |
+| <a name="output_rds_enhanced_monitoring_iam_role_name"></a> [rds\_enhanced\_monitoring\_iam\_role\_name](#output\_rds\_enhanced\_monitoring\_iam\_role\_name) | The name of the enhanced monitoring IAM role, null when settings.monitoring.enabled is false |
+| <a name="output_rds_instance_address"></a> [rds\_instance\_address](#output\_rds\_instance\_address) | The hostname of the RDS instance, without the port |
+| <a name="output_rds_instance_arn"></a> [rds\_instance\_arn](#output\_rds\_instance\_arn) | The ARN of the RDS instance |
+| <a name="output_rds_instance_endpoint"></a> [rds\_instance\_endpoint](#output\_rds\_instance\_endpoint) | The connection endpoint of the RDS instance, in host:port format |
+| <a name="output_rds_instance_hosted_zone_id"></a> [rds\_instance\_hosted\_zone\_id](#output\_rds\_instance\_hosted\_zone\_id) | The Route53 hosted zone ID of the RDS instance, to build alias records |
+| <a name="output_rds_instance_identifier"></a> [rds\_instance\_identifier](#output\_rds\_instance\_identifier) | The identifier of the RDS instance |
+| <a name="output_rds_instance_port"></a> [rds\_instance\_port](#output\_rds\_instance\_port) | The port the RDS instance is listening on |
+| <a name="output_rds_instance_username"></a> [rds\_instance\_username](#output\_rds\_instance\_username) | The master username of the RDS instance |
+| <a name="output_rds_secrets_credentials"></a> [rds\_secrets\_credentials](#output\_rds\_secrets\_credentials) | The name of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise |
+| <a name="output_rds_secrets_credentials_arn"></a> [rds\_secrets\_credentials\_arn](#output\_rds\_secrets\_credentials\_arn) | The ARN of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise |
+| <a name="output_rds_security_group_ids"></a> [rds\_security\_group\_ids](#output\_rds\_security\_group\_ids) | The list of security group IDs attached to the RDS instance, created by the module or looked up from the existing security group |
 
 
 
