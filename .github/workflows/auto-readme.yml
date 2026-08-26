@@ -26,6 +26,7 @@ permissions:
 
 jobs:
   update:
+    name: Update README
     runs-on: ubuntu-latest
     steps:
       - name: checkout
