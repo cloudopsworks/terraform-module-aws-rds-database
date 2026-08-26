@@ -44,6 +44,8 @@
 #     skip_destroy: true               # (Optional) If true, the cloudwatch log group will not be destroyed, defaults to false
 #     retention_in_days: 7             # (Optional) The retention period for the cloudwatch log group in days, defaults to 7
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ARN used to encrypt the cloudwatch log group, defaults to null (AWS managed)
+#     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias used to encrypt the cloudwatch log group, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. Falls back to the encryption settings when neither is set
 #     class: STANDARD                  # (Optional) The class for the cloudwatch log group. Possible values: STANDARD, INFREQUENT_ACCESS. Defaults to STANDARD
 #   storage:                           # (Optional) The storage settings for the RDS instance
 #     type: gp3                        # (Optional) The storage type for the RDS instance. Possible values: gp2, gp3, io1, io2. Defaults to gp3
@@ -52,9 +54,13 @@
 #     encryption:                      # (Optional) The encryption settings for the storage
 #       enabled: true                  # (Optional) If true, the storage will be encrypted, defaults to false
 #       kms_key_id: "arn:aws:kms..."   # (Optional) The KMS key ID for the storage encryption
+#       kms_key_alias: "alias/my-key"  # (Optional) The KMS key alias for the storage encryption, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. When neither is set the module creates and manages its own KMS key
 #   performance_insights:              # (Optional) The performance insights settings for the RDS instance. Alias: performance
 #     enabled: true                    # (Optional) If true, the performance insights will be enabled, defaults to false
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ID for the performance insights
+#     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias for the performance insights, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. Falls back to the encryption settings when neither is set
 #     retention_period: 15             # (Optional) The retention period for the performance insights in days, defaults to null (7 days on AWS). Possible values: 7, 731 or any multiple of 31
 #   apply_immediately: true            # (Optional) If true, the changes will be applied immediately, defaults to true
 #   deletion_protection: true          # (Optional) If true, the deletion protection will be enabled, defaults to false

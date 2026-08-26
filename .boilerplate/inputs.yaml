@@ -53,6 +53,8 @@
 #     skip_destroy: false                        # (Optional) Prevent log group deletion; default: false
 #     retention_in_days: 7                       # (Optional) Log retention days; default: 7
 #     kms_key_id: ""                             # (Optional) KMS key ARN encrypting the log group; default: null (AWS managed)
+#     kms_key_alias: ""                          # (Optional) KMS key alias encrypting the log group; used only when kms_key_id is unset.
+#                                                #            The "alias/" prefix is added when missing; falls back to the encryption settings
 #     class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
 #   storage:                                     # (Optional) Storage settings
 #     type: "gp3"                                # (Optional) Storage type: "gp2", "gp3", "io1", "io2"; default: "gp3"
@@ -61,9 +63,13 @@
 #     encryption:                                # (Optional) Storage encryption
 #       enabled: false                           # (Optional) Enable at-rest encryption; default: false
 #       kms_key_id: ""                           # (Optional) KMS key ID for encryption
+#       kms_key_alias: ""                        # (Optional) KMS key alias for encryption; used only when kms_key_id is unset.
+#                                                #            The "alias/" prefix is added when missing; the module creates its own key when neither is set
 #   performance_insights:                        # (Optional) Performance Insights settings. Alias: performance
 #     enabled: false                             # (Optional) Enable Performance Insights; default: false
 #     kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
+#     kms_key_alias: ""                          # (Optional) KMS key alias for PI encryption; used only when kms_key_id is unset.
+#                                                #            The "alias/" prefix is added when missing; falls back to the encryption settings
 #     retention_period: 7                        # (Optional) PI retention days; default: null (7 days on AWS). Values: 7, 731 or a multiple of 31
 #   iam:                                         # (Optional) IAM settings
 #     database_authentication_enabled: true      # (Optional) Enable IAM DB authentication; default: true
