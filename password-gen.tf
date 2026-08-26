@@ -8,7 +8,7 @@
 #
 
 resource "random_password" "randompass" {
-  count = try(var.settings.managed_password, false) && local.snapshot_identifier == null ? 0 : 1
+  count = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? 0 : 1
   keepers = {
     rotation_rfc3339 = time_rotating.randompass[0].rotation_rfc3339
   }
@@ -22,6 +22,6 @@ resource "random_password" "randompass" {
 }
 
 resource "time_rotating" "randompass" {
-  count         = try(var.settings.managed_password, false) && local.snapshot_identifier == null ? 0 : 1
+  count         = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? 0 : 1
   rotation_days = try(var.settings.password_rotation_period, 90)
 }

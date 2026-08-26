@@ -33,8 +33,8 @@ module "this" {
   port                                                   = local.rds_port
   db_name                                                = local.db_name
   username                                               = local.master_username
-  password_wo                                            = try(var.settings.managed_password, false) ? null : (local.snapshot_identifier == null ? random_password.randompass[0].result : null)
-  password_wo_version                                    = try(var.settings.managed_password, false) ? null : (local.snapshot_identifier == null ? time_rotating.randompass[0].unix : null)
+  password_wo                                            = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? null : random_password.randompass[0].result
+  password_wo_version                                    = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? null : time_rotating.randompass[0].unix
   manage_master_user_password                            = try(var.settings.managed_password, false)
   manage_master_user_password_rotation                   = try(var.settings.managed_password_rotation, false)
   master_user_secret_kms_key_id                          = try(var.settings.managed_password, false) ? try(var.settings.password_secret_kms_key_id, null) : null
