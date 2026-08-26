@@ -18,13 +18,14 @@ locals {
     dbInstanceIdentifier = module.this.db_instance_identifier
     sslmode              = "require"
   }
+  secret_name = format("%s/%s/%s/%s/master-rds-credentials", local.secret_store_path, var.settings.engine_type, module.this.db_instance_identifier, local.db_name)
 }
 
 # Secrets saving
 resource "aws_secretsmanager_secret" "rds" {
   count       = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? 0 : 1
-  name        = "${local.secret_store_path}/${var.settings.engine_type}/${module.this.db_instance_identifier}/${local.db_name}/master-rds-credentials"
-  description = "RDS Aurora Master credentials - ${local.master_username} - ${var.settings.engine_type} - ${module.this.db_instance_name} - ${local.db_name}"
+  name        = local.secret_name
+  description = format("RDS Aurora Master credentials - %s - %s - %s - %s", local.master_username, var.settings.engine_type, module.this.db_instance_name, local.db_name)
   kms_key_id  = try(var.settings.password_secret_kms_key_id, null)
   tags        = local.all_tags
 }
