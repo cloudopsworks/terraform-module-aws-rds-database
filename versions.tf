@@ -8,12 +8,20 @@
 #
 
 terraform {
-  required_version = ">= 1.3"
+  required_version = ">= 1.11.1"
   # Complete with required providers for the module
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.35"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.12"
     }
   }
 }

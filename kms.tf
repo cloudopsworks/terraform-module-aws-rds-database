@@ -9,7 +9,7 @@
 
 resource "aws_kms_key" "this" {
   count = (try(var.settings.encryption.enabled, var.settings.storage.encryption.enabled, false) &&
-    try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, "") != "" ? 1 : 0
+    try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, "") == "" ? 1 : 0
   )
   description             = "KMS key for RDS encryption for ${local.db_identifier}"
   deletion_window_in_days = try(var.settings.storage.encryption.deletion_window, 30)
@@ -22,7 +22,7 @@ resource "aws_kms_key" "this" {
 
 resource "aws_kms_alias" "this" {
   count = (try(var.settings.encryption.enabled, var.settings.storage.encryption.enabled, false) &&
-    try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, "") != "" ? 1 : 0
+    try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, "") == "" ? 1 : 0
   )
   target_key_id = aws_kms_key.this[0].key_id
   name          = format("alias/%s-key", local.db_identifier)

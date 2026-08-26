@@ -13,6 +13,10 @@ locals {
   db_identifier         = try(var.settings.name, "") != "" ? var.settings.name : "rds-db-${var.settings.name_prefix}-${local.system_name}"
   default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["audit", "error"]
   snapshot_identifier   = try(var.settings.restore_snapshot_identifier, var.settings.recovery.snapshot_identifier, null)
+  managed_password      = try(var.settings.managed_password, false)
+  # The module generates and stores the master password only for fresh instances that do not
+  # delegate the secret to AWS; a snapshot restore carries the master password of the snapshot.
+  generate_password = !local.managed_password && local.snapshot_identifier == null
 }
 
 # Provisions RDS instance only if rds_provision=true
@@ -33,11 +37,11 @@ module "this" {
   port                                                   = local.rds_port
   db_name                                                = local.db_name
   username                                               = local.master_username
-  password_wo                                            = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? null : random_password.randompass[0].result
-  password_wo_version                                    = try(var.settings.managed_password, false) || local.snapshot_identifier == null ? null : time_rotating.randompass[0].unix
-  manage_master_user_password                            = try(var.settings.managed_password, false)
+  password_wo                                            = local.generate_password ? random_password.randompass[0].result : null
+  password_wo_version                                    = local.generate_password ? time_rotating.randompass[0].unix : null
+  manage_master_user_password                            = local.managed_password
   manage_master_user_password_rotation                   = try(var.settings.managed_password_rotation, false)
-  master_user_secret_kms_key_id                          = try(var.settings.managed_password, false) ? try(var.settings.password_secret_kms_key_id, null) : null
+  master_user_secret_kms_key_id                          = local.managed_password ? try(var.settings.password_secret_kms_key_id, null) : null
   master_user_password_rotation_automatically_after_days = try(var.settings.managed_password_rotation, false) ? try(var.settings.password_rotation_period, 90) : null
   master_user_password_rotation_duration                 = try(var.settings.managed_password_rotation, false) ? try(var.settings.rotation_duration, "1h") : null
   iam_database_authentication_enabled                    = try(var.settings.iam.database_authentication_enabled, true)
@@ -67,15 +71,15 @@ module "this" {
   storage_type                                           = try(var.settings.storage.type, "gp3")
   storage_throughput                                     = try(var.settings.storage.throughput, null)
   iops                                                   = try(var.settings.storage.iops, null)
-  kms_key_id                                             = try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, aws_kms_key.this[0].key_id, null)
+  kms_key_id                                             = try(var.settings.encryption.kms_key_id, var.settings.storage.encryption.kms_key_id, one(aws_kms_key.this[*].key_id))
   create_cloudwatch_log_group                            = try(var.settings.cloudwatch.enabled, false)
   enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, local.default_exported_logs)
   cloudwatch_log_group_skip_destroy                      = try(var.settings.cloudwatch.skip_destroy, false)
-  cloudwatch_log_group_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.cloudwatch.kms_key_id, aws_kms_key.this[0].key_id, null)
+  cloudwatch_log_group_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.cloudwatch.kms_key_id, one(aws_kms_key.this[*].key_id))
   cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
   cloudwatch_log_group_class                             = try(var.settings.cloudwatch.class, null)
   performance_insights_enabled                           = try(var.settings.performance_insights.enabled, var.settings.performance.enabled, false)
-  performance_insights_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.performance_insights.kms_key_id, var.settings.performance.kms_key_id, aws_kms_key.this[0].key_id, null)
+  performance_insights_kms_key_id                        = try(var.settings.encryption.kms_key_id, var.settings.performance_insights.kms_key_id, var.settings.performance.kms_key_id, one(aws_kms_key.this[*].key_id))
   performance_insights_retention_period                  = try(var.settings.performance_insights.retention_period, var.settings.performance.retention_period, null)
   tags                                                   = merge(local.all_tags, local.backup_tags)
 }

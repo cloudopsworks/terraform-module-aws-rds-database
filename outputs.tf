@@ -56,13 +56,13 @@ output "rds_instance_username" {
 }
 
 output "rds_secrets_credentials" {
-  description = "The name of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed_password is true, module managed otherwise"
-  value       = try(var.settings.managed_password, false) ? local.master_user_secret_name : aws_secretsmanager_secret.rds[0].name
+  description = "The name of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed_password is true, module managed otherwise, null when restoring from a snapshot"
+  value       = local.managed_password ? local.master_user_secret_name : one(aws_secretsmanager_secret.rds[*].name)
 }
 
 output "rds_secrets_credentials_arn" {
-  description = "The ARN of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed_password is true, module managed otherwise"
-  value       = try(var.settings.managed_password, false) ? module.this.db_instance_master_user_secret_arn : aws_secretsmanager_secret.rds[0].arn
+  description = "The ARN of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed_password is true, module managed otherwise, null when restoring from a snapshot"
+  value       = local.managed_password ? module.this.db_instance_master_user_secret_arn : one(aws_secretsmanager_secret.rds[*].arn)
 }
 
 output "rds_enhanced_monitoring_iam_role_arn" {
