@@ -17,6 +17,10 @@ locals {
   # The module generates and stores the master password only for fresh instances that do not
   # delegate the secret to AWS; a snapshot restore carries the master password of the snapshot.
   generate_password = !local.managed_password && local.snapshot_identifier == null
+  # settings.database_name may be explicitly null, meaning no initial database is created.
+  # The module managed secret is keyed on the database name, so the whole Secrets Manager
+  # path is disabled in that case.
+  create_secret = local.generate_password && local.db_name != null
 }
 
 # Provisions RDS instance only if rds_provision=true

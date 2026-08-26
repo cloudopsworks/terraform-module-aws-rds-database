@@ -11,7 +11,8 @@
 # settings:
 #   name: "mydb"                       # (Optional) The name of the RDS instance, if not provided it will be generated using name_prefix and system_name
 #   name_prefix: "mydb"                # (Required) The name prefix of the RDS instance if name is not provided
-#   database_name: "mydb"              # (Optional) The name of the database to create when the RDS instance is created, defaults to cluster_db
+#   database_name: "mydb"              # (Optional) The name of the database to create when the RDS instance is created, defaults to cluster_db.
+#                                      #            Set explicitly to null to skip the initial database, which also disables the module managed Secrets Manager entry
 #   master_username: "admin"           # (Optional) The master username for the RDS instance, defaults to admin
 #   engine_type: "postgresql"          # (Required) The engine type of the RDS instance. Possible values: postgresql, mysql, mariadb, aurora-postgresql, aurora-mysql, mssql
 #   engine_version: "15.5"             # (Required) The engine version of the RDS instance

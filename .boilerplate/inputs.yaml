@@ -5,7 +5,8 @@
 # settings:                                      # (Required) Root map for RDS instance configuration
 #   name_prefix: "mydb"                          # (Required) Name prefix used when `name` is not provided
 #   name: "mydb"                                 # (Optional) Explicit RDS instance name; overrides name_prefix
-#   database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db"
+#   database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db". Set explicitly to null to skip the
+#                                                #            initial database; this also disables the module managed Secrets Manager entry
 #   master_username: "admin"                     # (Optional) Master username; default: "admin"
 #   engine_type: "postgresql"                    # (Required) Engine type: "postgresql", "mysql", "mariadb", "aurora-postgresql", "aurora-mysql", "mssql"
 #   engine_version: "15.5"                       # (Required) Engine version (e.g., "15.5" for PostgreSQL)
