@@ -8,8 +8,7 @@
 #
 
 terraform {
-  # Write-only arguments (password_wo/password_wo_version) used by terraform-aws-modules/rds v7 require >= 1.11.1
-  required_version = ">= 1.11.1"
+  required_version = ">= 1.3"
   # Complete with required providers for the module
   required_providers {
     aws = {

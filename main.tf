@@ -12,6 +12,7 @@ locals {
   db_name               = try(var.settings.database_name, "cluster_db")
   db_identifier         = try(var.settings.name, "") != "" ? var.settings.name : "rds-db-${var.settings.name_prefix}-${local.system_name}"
   default_exported_logs = strcontains(var.settings.engine_type, "postgres") ? ["postgresql", "upgrade"] : ["audit", "error"]
+  snapshot_identifier   = try(var.settings.restore_snapshot_identifier, var.settings.recovery.snapshot_identifier, null)
 }
 
 # Provisions RDS instance only if rds_provision=true
@@ -32,8 +33,8 @@ module "this" {
   port                                                   = local.rds_port
   db_name                                                = local.db_name
   username                                               = local.master_username
-  password_wo                                            = try(var.settings.managed_password, false) ? null : random_password.randompass[0].result
-  password_wo_version                                    = try(var.settings.managed_password, false) ? null : time_rotating.randompass[0].unix
+  password_wo                                            = try(var.settings.managed_password, false) ? null : (local.snapshot_identifier == null ? random_password.randompass[0].result : null)
+  password_wo_version                                    = try(var.settings.managed_password, false) ? null : (local.snapshot_identifier == null ? time_rotating.randompass[0].unix : null)
   manage_master_user_password                            = try(var.settings.managed_password, false)
   manage_master_user_password_rotation                   = try(var.settings.managed_password_rotation, false)
   master_user_secret_kms_key_id                          = try(var.settings.managed_password, false) ? try(var.settings.password_secret_kms_key_id, null) : null
@@ -56,7 +57,7 @@ module "this" {
   parameters                                             = try(var.settings.parameters, [])
   options                                                = try(var.settings.options, [])
   skip_final_snapshot                                    = false
-  snapshot_identifier                                    = try(var.settings.restore_snapshot_identifier, var.settings.recovery.snapshot_identifier, null)
+  snapshot_identifier                                    = local.snapshot_identifier
   final_snapshot_identifier_prefix                       = "final-snap"
   copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, var.settings.backup.copy_tags, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
