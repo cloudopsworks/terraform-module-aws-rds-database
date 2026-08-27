@@ -12,7 +12,7 @@ locals {
 }
 
 data "aws_sns_topic" "events" {
-  count = try(var.settings.events.sns_topic_arn, "") != "" && try(var.settings.events.enabled, false) ? 1 : 0
+  count = try(var.settings.events.enabled, false) && try(var.settings.events.sns_topic_arn, "") == "" ? 1 : 0
   name  = var.settings.events.sns_topic_name
 }
 

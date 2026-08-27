@@ -30,11 +30,11 @@ This document provides instructions for AI Agents working with the implementatio
   - The subname must be no more than 12 chars (e.g., `variables-vpc.tf`).
 - **Initialization**:
   - This template must be initialized on the target cloud provider using `Makefile`.
-  - For AWS: `make init/aws`
-  - For GCP: `make init/gcp`
-  - For Azure: `make init/azurerm`
-  - For MongoDB Atlas: `make init/mongodb`
-  - For Github: `make init/github`
+  - For AWS: `tronador project init aws`
+  - For GCP: `tronador project init gcp`
+  - For Azure: `tronador project init azurerm`
+  - For MongoDB Atlas: `tronador project init mongodb`
+  - For Github: `tronador project init github`
   - The initialization process for each cloud will copy its boilerplate files to the root module.
   - If a `versions.tf` file exists (e.g., from `.cloudopsworks/boilerplate/aws`, `gcp`, `azurerm`, or any other supported provider), the module is already initialized and under development.
   - You can check the current provider in `.cloudopsworks/.provider`.

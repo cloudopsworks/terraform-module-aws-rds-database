@@ -10,7 +10,7 @@
 
 [![cloudopsworks][logo]](https://cloudopsworks.co/)
 
-# Terraform Module: AWS RDS Database
+# Terraform Module: AWS RDS Database [![Latest Release](https://img.shields.io/github/release/cloudopsworks/terraform-module-aws-rds-database.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-module-aws-rds-database/releases/latest) [![Last Updated](https://img.shields.io/github/last-commit/cloudopsworks/terraform-module-aws-rds-database.svg?style=for-the-badge)](https://github.com/cloudopsworks/terraform-module-aws-rds-database/commits)
 
 
 Professional Terraform module to provision and manage AWS RDS database instances.
@@ -55,6 +55,7 @@ for RDS deployments, including:
 • Automated credential management via AWS Secrets Manager
 • Enhanced monitoring and CloudWatch log exports
 • Performance Insights and storage autoscaling
+• Customer managed KMS encryption by key id, key alias, or a module managed key
 • Automated backups and snapshot restoration
 • Hoop integration for secure database access
 
@@ -68,6 +69,10 @@ for RDS deployments, including:
 | Master password | When `settings.managed_password` is `false` the module generates the password and passes it to RDS through the write-only arguments `password_wo` / `password_wo_version`, so the plaintext value never lands in the Terraform state of the RDS instance. The credentials are published to a module owned Secrets Manager secret |
 | Password rotation | `settings.password_rotation_period` drives AWS Secrets Manager rotation when `settings.managed_password_rotation` is `true`, and the regeneration cadence of the module generated password otherwise |
 | Subnet group | The module never creates a DB subnet group, `vpc.subnet_group` must reference an existing one |
+| Encryption key | `settings.encryption` takes precedence over `settings.storage.encryption`. Supply `kms_key_id` or `kms_key_alias`; the alias is resolved to its target key and the `alias/` prefix is added when missing. When encryption is enabled and neither is set, the module creates and manages its own KMS key and alias |
+| CloudWatch and Performance Insights keys | Each takes its own `kms_key_id` / `kms_key_alias`. When neither is set they fall back to the module managed key only, never to an operator supplied encryption key, and to AWS default encryption when the module owns no key. CloudWatch Logs and Performance Insights can only use a key whose policy grants them, and the module can guarantee that on its own key alone. An AWS managed key such as `aws/rds` carries no such grant and its policy cannot be edited, so reusing it for logs or Performance Insights fails at apply |
+| Module managed key policy | The key created by the module grants `kms:*` to the account root, RDS access through `kms:ViaService` scoped to `rds.<region>.amazonaws.com` and the calling account, and `logs.<region>.amazonaws.com` scoped by encryption context to `/aws/rds/instance/<identifier>/*`. Performance Insights needs no separate grant, it creates its own grants through the RDS statement |
+| Initial database | `settings.database_name` set explicitly to `null` skips the initial database and disables the module managed Secrets Manager secret |
 
 ## Usage
 
@@ -127,7 +132,8 @@ Scaffold prompts for the boilerplate variables below:
 settings:                                      # (Required) Root map for RDS instance configuration
   name_prefix: "mydb"                          # (Required) Name prefix used when `name` is not provided
   name: "mydb"                                 # (Optional) Explicit RDS instance name; overrides name_prefix
-  database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db"
+  database_name: "mydb"                        # (Optional) Initial DB name; default: "cluster_db". Set explicitly to null to skip the
+                                               #            initial database; this also disables the module managed Secrets Manager entry
   master_username: "admin"                     # (Optional) Master username; default: "admin"
   engine_type: "postgresql"                    # (Required) Engine type: "postgresql", "mysql", "mariadb", "aurora-postgresql", "aurora-mysql", "mssql"
   engine_version: "15.5"                       # (Required) Engine version (e.g., "15.5" for PostgreSQL)
@@ -174,17 +180,34 @@ settings:                                      # (Required) Root map for RDS ins
     skip_destroy: false                        # (Optional) Prevent log group deletion; default: false
     retention_in_days: 7                       # (Optional) Log retention days; default: 7
     kms_key_id: ""                             # (Optional) KMS key ARN encrypting the log group; default: null (AWS managed)
+    kms_key_alias: ""                          # (Optional) KMS key alias encrypting the log group; used only when kms_key_id is unset.
+                                               #            The "alias/" prefix is added when missing. When unset, falls back to the module managed key only,
+                                               #            never to an operator supplied encryption key; AWS default encryption applies when the module owns no key
     class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
+  encryption:                                  # (Optional) Encryption settings for the instance; takes precedence over storage.encryption
+    enabled: false                             # (Optional) Enable at-rest encryption; default: false. Falls back to storage.encryption.enabled
+    kms_key_id: ""                             # (Optional) KMS key ID or ARN for encryption. Falls back to storage.encryption.kms_key_id
+    kms_key_alias: ""                          # (Optional) KMS key alias for encryption; used only when kms_key_id is unset. The "alias/" prefix
+                                               #            is added when missing. When no key id or alias is set anywhere, the module creates its own key
   storage:                                     # (Optional) Storage settings
     type: "gp3"                                # (Optional) Storage type: "gp2", "gp3", "io1", "io2"; default: "gp3"
     throughput: 125                            # (Optional) Throughput in MB/s for gp3
     iops: 3000                                 # (Optional) IOPS for io1/io2/gp3
-    encryption:                                # (Optional) Storage encryption
+    encryption:                                # (Optional) Storage encryption. Superseded by the top level encryption block when both are set
       enabled: false                           # (Optional) Enable at-rest encryption; default: false
       kms_key_id: ""                           # (Optional) KMS key ID for encryption
+      kms_key_alias: ""                        # (Optional) KMS key alias for encryption; used only when kms_key_id is unset.
+                                               #            The "alias/" prefix is added when missing; the module creates its own key when neither is set
+      deletion_window: 30                      # (Optional) Deletion window days for the module managed KMS key; default: 30. Ignored when an existing key or alias is supplied
+      rotation_enabled: true                   # (Optional) Enable automatic rotation of the module managed KMS key; default: true
+      rotation_period: 90                      # (Optional) Rotation period days for the module managed KMS key; default: 90
+      multi_region: false                      # (Optional) Create the module managed KMS key as multi-region; default: false
   performance_insights:                        # (Optional) Performance Insights settings. Alias: performance
     enabled: false                             # (Optional) Enable Performance Insights; default: false
     kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
+    kms_key_alias: ""                          # (Optional) KMS key alias for PI encryption; used only when kms_key_id is unset.
+                                               #            The "alias/" prefix is added when missing. When unset, falls back to the module managed key only,
+                                               #            never to an operator supplied encryption key; AWS default encryption applies when the module owns no key
     retention_period: 7                        # (Optional) PI retention days; default: null (7 days on AWS). Values: 7, 731 or a multiple of 31
   iam:                                         # (Optional) IAM settings
     database_authentication_enabled: true      # (Optional) Enable IAM DB authentication; default: true
@@ -379,6 +402,32 @@ security_groups:
   name: "shared-database-sg"
 ```
 
+### Customer managed encryption by KMS alias
+
+```yaml
+settings:
+  name_prefix: "ledger"
+  engine_type: "postgresql"
+  engine_version: "16.3"
+  family: "postgres16"
+  major_engine_version: "16"
+  instance_size: "db.r6g.xlarge"
+  storage_size: 500
+  managed_password: true
+  encryption:
+    enabled: true
+    kms_key_alias: "platform-data-at-rest"   # resolved to alias/platform-data-at-rest
+  cloudwatch:
+    enabled: true
+    kms_key_alias: "alias/platform-logs"     # already prefixed, used as is
+  performance_insights:
+    enabled: true                            # no key set: uses AWS default encryption, the
+                                             # supplied alias is never reused for PI
+```
+
+Omitting both `kms_key_id` and `kms_key_alias` while `encryption.enabled` is `true`
+makes the module create and manage its own KMS key and `alias/<instance>-key`.
+
 ### Exposing the database through Hoop
 
 ```yaml
@@ -423,14 +472,16 @@ Available targets:
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.1 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
+| <a name="requirement_time"></a> [time](#requirement\_time) | ~> 0.12 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.35 |
-| <a name="provider_random"></a> [random](#provider\_random) | n/a |
-| <a name="provider_time"></a> [time](#provider\_time) | n/a |
+| <a name="provider_random"></a> [random](#provider\_random) | ~> 3.6 |
+| <a name="provider_time"></a> [time](#provider\_time) | ~> 0.12 |
 
 ## Modules
 
@@ -454,7 +505,16 @@ Available targets:
 | [aws_vpc_security_group_ingress_rule.this_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [random_password.randompass](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [time_rotating.randompass](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/rotating) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy_document.kms](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
+| [aws_kms_alias.cw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
+| [aws_kms_alias.perf](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
+| [aws_kms_alias.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
+| [aws_kms_key.cw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
+| [aws_kms_key.perf](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
+| [aws_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
 | [aws_lambda_function.rotation_function](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lambda_function) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 | [aws_secretsmanager_secret.rds_managed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret) | data source |
 | [aws_security_group.allow_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
@@ -487,8 +547,8 @@ Available targets:
 | <a name="output_rds_instance_identifier"></a> [rds\_instance\_identifier](#output\_rds\_instance\_identifier) | The identifier of the RDS instance |
 | <a name="output_rds_instance_port"></a> [rds\_instance\_port](#output\_rds\_instance\_port) | The port the RDS instance is listening on |
 | <a name="output_rds_instance_username"></a> [rds\_instance\_username](#output\_rds\_instance\_username) | The master username of the RDS instance |
-| <a name="output_rds_secrets_credentials"></a> [rds\_secrets\_credentials](#output\_rds\_secrets\_credentials) | The name of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise |
-| <a name="output_rds_secrets_credentials_arn"></a> [rds\_secrets\_credentials\_arn](#output\_rds\_secrets\_credentials\_arn) | The ARN of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise |
+| <a name="output_rds_secrets_credentials"></a> [rds\_secrets\_credentials](#output\_rds\_secrets\_credentials) | The name of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise, null when restoring from a snapshot |
+| <a name="output_rds_secrets_credentials_arn"></a> [rds\_secrets\_credentials\_arn](#output\_rds\_secrets\_credentials\_arn) | The ARN of the Secrets Manager secret holding the master credentials, AWS managed when settings.managed\_password is true, module managed otherwise, null when restoring from a snapshot |
 | <a name="output_rds_security_group_ids"></a> [rds\_security\_group\_ids](#output\_rds\_security\_group\_ids) | The list of security group IDs attached to the RDS instance, created by the module or looked up from the existing security group |
 
 

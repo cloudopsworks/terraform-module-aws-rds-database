@@ -11,7 +11,8 @@
 # settings:
 #   name: "mydb"                       # (Optional) The name of the RDS instance, if not provided it will be generated using name_prefix and system_name
 #   name_prefix: "mydb"                # (Required) The name prefix of the RDS instance if name is not provided
-#   database_name: "mydb"              # (Optional) The name of the database to create when the RDS instance is created, defaults to cluster_db
+#   database_name: "mydb"              # (Optional) The name of the database to create when the RDS instance is created, defaults to cluster_db.
+#                                      #            Set explicitly to null to skip the initial database, which also disables the module managed Secrets Manager entry
 #   master_username: "admin"           # (Optional) The master username for the RDS instance, defaults to admin
 #   engine_type: "postgresql"          # (Required) The engine type of the RDS instance. Possible values: postgresql, mysql, mariadb, aurora-postgresql, aurora-mysql, mssql
 #   engine_version: "15.5"             # (Required) The engine version of the RDS instance
@@ -43,17 +44,35 @@
 #     skip_destroy: true               # (Optional) If true, the cloudwatch log group will not be destroyed, defaults to false
 #     retention_in_days: 7             # (Optional) The retention period for the cloudwatch log group in days, defaults to 7
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ARN used to encrypt the cloudwatch log group, defaults to null (AWS managed)
+#     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias used to encrypt the cloudwatch log group, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. When neither is set, falls back to the module managed key only,
+#                                      #            never to an operator supplied encryption key, and to AWS default encryption when the module owns no key
 #     class: STANDARD                  # (Optional) The class for the cloudwatch log group. Possible values: STANDARD, INFREQUENT_ACCESS. Defaults to STANDARD
+#   encryption:                        # (Optional) The encryption settings for the RDS instance, takes precedence over storage.encryption
+#     enabled: true                    # (Optional) If true, the storage will be encrypted, defaults to false. Falls back to storage.encryption.enabled
+#     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ID or ARN used for the encryption. Falls back to storage.encryption.kms_key_id
+#     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias used for the encryption, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. Falls back to storage.encryption.kms_key_alias.
+#                                      #            When neither a key id nor an alias is set anywhere, the module creates and manages its own KMS key
 #   storage:                           # (Optional) The storage settings for the RDS instance
 #     type: gp3                        # (Optional) The storage type for the RDS instance. Possible values: gp2, gp3, io1, io2. Defaults to gp3
 #     throughput: 100                  # (Optional) The throughput for the storage in MB/s, only for gp3
 #     iops: 3000                       # (Optional) The IOPS for the storage, only for io1, io2 and gp3
-#     encryption:                      # (Optional) The encryption settings for the storage
+#     encryption:                      # (Optional) The encryption settings for the storage. Superseded by the top level encryption block when both are set
 #       enabled: true                  # (Optional) If true, the storage will be encrypted, defaults to false
 #       kms_key_id: "arn:aws:kms..."   # (Optional) The KMS key ID for the storage encryption
+#       kms_key_alias: "alias/my-key"  # (Optional) The KMS key alias for the storage encryption, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. When neither is set the module creates and manages its own KMS key
+#       deletion_window: 30            # (Optional) The deletion window in days for the module managed KMS key, defaults to 30. Ignored when an existing key or alias is supplied
+#       rotation_enabled: true         # (Optional) If true, automatic rotation of the module managed KMS key is enabled, defaults to true
+#       rotation_period: 90            # (Optional) The rotation period in days for the module managed KMS key, defaults to 90
+#       multi_region: false            # (Optional) If true, the module managed KMS key is created as multi-region, defaults to false
 #   performance_insights:              # (Optional) The performance insights settings for the RDS instance. Alias: performance
 #     enabled: true                    # (Optional) If true, the performance insights will be enabled, defaults to false
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ID for the performance insights
+#     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias for the performance insights, used only when kms_key_id is not set.
+#                                      #            The alias/ prefix is added when missing. When neither is set, falls back to the module managed key only,
+#                                      #            never to an operator supplied encryption key, and to AWS default encryption when the module owns no key
 #     retention_period: 15             # (Optional) The retention period for the performance insights in days, defaults to null (7 days on AWS). Possible values: 7, 731 or any multiple of 31
 #   apply_immediately: true            # (Optional) If true, the changes will be applied immediately, defaults to true
 #   deletion_protection: true          # (Optional) If true, the deletion protection will be enabled, defaults to false
