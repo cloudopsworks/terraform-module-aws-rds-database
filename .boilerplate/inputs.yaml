@@ -56,15 +56,24 @@
 #     kms_key_alias: ""                          # (Optional) KMS key alias encrypting the log group; used only when kms_key_id is unset.
 #                                                #            The "alias/" prefix is added when missing; falls back to the encryption settings
 #     class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
+#   encryption:                                  # (Optional) Encryption settings for the instance; takes precedence over storage.encryption
+#     enabled: false                             # (Optional) Enable at-rest encryption; default: false. Falls back to storage.encryption.enabled
+#     kms_key_id: ""                             # (Optional) KMS key ID or ARN for encryption. Falls back to storage.encryption.kms_key_id
+#     kms_key_alias: ""                          # (Optional) KMS key alias for encryption; used only when kms_key_id is unset. The "alias/" prefix
+#                                                #            is added when missing. When no key id or alias is set anywhere, the module creates its own key
 #   storage:                                     # (Optional) Storage settings
 #     type: "gp3"                                # (Optional) Storage type: "gp2", "gp3", "io1", "io2"; default: "gp3"
 #     throughput: 125                            # (Optional) Throughput in MB/s for gp3
 #     iops: 3000                                 # (Optional) IOPS for io1/io2/gp3
-#     encryption:                                # (Optional) Storage encryption
+#     encryption:                                # (Optional) Storage encryption. Superseded by the top level encryption block when both are set
 #       enabled: false                           # (Optional) Enable at-rest encryption; default: false
 #       kms_key_id: ""                           # (Optional) KMS key ID for encryption
 #       kms_key_alias: ""                        # (Optional) KMS key alias for encryption; used only when kms_key_id is unset.
 #                                                #            The "alias/" prefix is added when missing; the module creates its own key when neither is set
+#       deletion_window: 30                      # (Optional) Deletion window days for the module managed KMS key; default: 30. Ignored when an existing key or alias is supplied
+#       rotation_enabled: true                   # (Optional) Enable automatic rotation of the module managed KMS key; default: true
+#       rotation_period: 90                      # (Optional) Rotation period days for the module managed KMS key; default: 90
+#       multi_region: false                      # (Optional) Create the module managed KMS key as multi-region; default: false
 #   performance_insights:                        # (Optional) Performance Insights settings. Alias: performance
 #     enabled: false                             # (Optional) Enable Performance Insights; default: false
 #     kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
