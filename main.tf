@@ -79,11 +79,11 @@ module "this" {
   create_cloudwatch_log_group                            = try(var.settings.cloudwatch.enabled, false)
   enabled_cloudwatch_logs_exports                        = try(var.settings.cloudwatch.exported_logs, local.default_exported_logs)
   cloudwatch_log_group_skip_destroy                      = try(var.settings.cloudwatch.skip_destroy, false)
-  cloudwatch_log_group_kms_key_id                        = try(coalesce(one(data.aws_kms_key.cw[*].arn), one(data.aws_kms_alias.cw[*].target_key_arn), one(data.aws_kms_alias.this[*].target_key_arn), one(aws_kms_key.this[*].arn), one(data.aws_kms_key.this[*].arn)), null)
+  cloudwatch_log_group_kms_key_id                        = try(coalesce(one(data.aws_kms_key.cw[*].arn), one(data.aws_kms_alias.cw[*].target_key_arn), one(aws_kms_key.this[*].arn)), null)
   cloudwatch_log_group_retention_in_days                 = try(var.settings.cloudwatch.retention_in_days, 7)
   cloudwatch_log_group_class                             = try(var.settings.cloudwatch.class, null)
   performance_insights_enabled                           = try(var.settings.performance_insights.enabled, var.settings.performance.enabled, false)
-  performance_insights_kms_key_id                        = try(coalesce(one(data.aws_kms_alias.perf[*].target_key_arn), one(data.aws_kms_key.perf[*].arn), one(data.aws_kms_alias.this[*].target_key_arn), one(aws_kms_key.this[*].arn), one(data.aws_kms_key.this[*].arn)), null)
+  performance_insights_kms_key_id                        = try(coalesce(one(data.aws_kms_alias.perf[*].target_key_arn), one(data.aws_kms_key.perf[*].arn), one(aws_kms_key.this[*].arn)), null)
   performance_insights_retention_period                  = try(var.settings.performance_insights.retention_period, var.settings.performance.retention_period, null)
   tags                                                   = merge(local.all_tags, local.backup_tags)
 }

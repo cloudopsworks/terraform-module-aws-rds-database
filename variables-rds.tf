@@ -45,7 +45,8 @@
 #     retention_in_days: 7             # (Optional) The retention period for the cloudwatch log group in days, defaults to 7
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ARN used to encrypt the cloudwatch log group, defaults to null (AWS managed)
 #     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias used to encrypt the cloudwatch log group, used only when kms_key_id is not set.
-#                                      #            The alias/ prefix is added when missing. Falls back to the encryption settings when neither is set
+#                                      #            The alias/ prefix is added when missing. When neither is set, falls back to the module managed key only,
+#                                      #            never to an operator supplied encryption key, and to AWS default encryption when the module owns no key
 #     class: STANDARD                  # (Optional) The class for the cloudwatch log group. Possible values: STANDARD, INFREQUENT_ACCESS. Defaults to STANDARD
 #   encryption:                        # (Optional) The encryption settings for the RDS instance, takes precedence over storage.encryption
 #     enabled: true                    # (Optional) If true, the storage will be encrypted, defaults to false. Falls back to storage.encryption.enabled
@@ -70,7 +71,8 @@
 #     enabled: true                    # (Optional) If true, the performance insights will be enabled, defaults to false
 #     kms_key_id: "arn:aws:kms..."     # (Optional) The KMS key ID for the performance insights
 #     kms_key_alias: "alias/my-key"    # (Optional) The KMS key alias for the performance insights, used only when kms_key_id is not set.
-#                                      #            The alias/ prefix is added when missing. Falls back to the encryption settings when neither is set
+#                                      #            The alias/ prefix is added when missing. When neither is set, falls back to the module managed key only,
+#                                      #            never to an operator supplied encryption key, and to AWS default encryption when the module owns no key
 #     retention_period: 15             # (Optional) The retention period for the performance insights in days, defaults to null (7 days on AWS). Possible values: 7, 731 or any multiple of 31
 #   apply_immediately: true            # (Optional) If true, the changes will be applied immediately, defaults to true
 #   deletion_protection: true          # (Optional) If true, the deletion protection will be enabled, defaults to false

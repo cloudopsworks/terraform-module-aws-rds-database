@@ -70,7 +70,8 @@ for RDS deployments, including:
 | Password rotation | `settings.password_rotation_period` drives AWS Secrets Manager rotation when `settings.managed_password_rotation` is `true`, and the regeneration cadence of the module generated password otherwise |
 | Subnet group | The module never creates a DB subnet group, `vpc.subnet_group` must reference an existing one |
 | Encryption key | `settings.encryption` takes precedence over `settings.storage.encryption`. Supply `kms_key_id` or `kms_key_alias`; the alias is resolved to its target key and the `alias/` prefix is added when missing. When encryption is enabled and neither is set, the module creates and manages its own KMS key and alias |
-| CloudWatch and Performance Insights keys | Each takes its own `kms_key_id` / `kms_key_alias`, and falls back to the encryption key when neither is set |
+| CloudWatch and Performance Insights keys | Each takes its own `kms_key_id` / `kms_key_alias`. When neither is set they fall back to the module managed key only, never to an operator supplied encryption key, and to AWS default encryption when the module owns no key. CloudWatch Logs and Performance Insights can only use a key whose policy grants them, and the module can guarantee that on its own key alone. An AWS managed key such as `aws/rds` carries no such grant and its policy cannot be edited, so reusing it for logs or Performance Insights fails at apply |
+| Module managed key policy | The key created by the module grants `kms:*` to the account root, RDS access through `kms:ViaService` scoped to `rds.<region>.amazonaws.com` and the calling account, and `logs.<region>.amazonaws.com` scoped by encryption context to `/aws/rds/instance/<identifier>/*`. Performance Insights needs no separate grant, it creates its own grants through the RDS statement |
 | Initial database | `settings.database_name` set explicitly to `null` skips the initial database and disables the module managed Secrets Manager secret |
 
 ## Usage
@@ -180,7 +181,8 @@ settings:                                      # (Required) Root map for RDS ins
     retention_in_days: 7                       # (Optional) Log retention days; default: 7
     kms_key_id: ""                             # (Optional) KMS key ARN encrypting the log group; default: null (AWS managed)
     kms_key_alias: ""                          # (Optional) KMS key alias encrypting the log group; used only when kms_key_id is unset.
-                                               #            The "alias/" prefix is added when missing; falls back to the encryption settings
+                                               #            The "alias/" prefix is added when missing. When unset, falls back to the module managed key only,
+                                               #            never to an operator supplied encryption key; AWS default encryption applies when the module owns no key
     class: "STANDARD"                          # (Optional) Log group class: "STANDARD" | "INFREQUENT_ACCESS"; default: "STANDARD"
   encryption:                                  # (Optional) Encryption settings for the instance; takes precedence over storage.encryption
     enabled: false                             # (Optional) Enable at-rest encryption; default: false. Falls back to storage.encryption.enabled
@@ -204,7 +206,8 @@ settings:                                      # (Required) Root map for RDS ins
     enabled: false                             # (Optional) Enable Performance Insights; default: false
     kms_key_id: ""                             # (Optional) KMS key ID for PI encryption
     kms_key_alias: ""                          # (Optional) KMS key alias for PI encryption; used only when kms_key_id is unset.
-                                               #            The "alias/" prefix is added when missing; falls back to the encryption settings
+                                               #            The "alias/" prefix is added when missing. When unset, falls back to the module managed key only,
+                                               #            never to an operator supplied encryption key; AWS default encryption applies when the module owns no key
     retention_period: 7                        # (Optional) PI retention days; default: null (7 days on AWS). Values: 7, 731 or a multiple of 31
   iam:                                         # (Optional) IAM settings
     database_authentication_enabled: true      # (Optional) Enable IAM DB authentication; default: true
@@ -418,7 +421,8 @@ settings:
     enabled: true
     kms_key_alias: "alias/platform-logs"     # already prefixed, used as is
   performance_insights:
-    enabled: true                            # no key set, inherits the encryption key
+    enabled: true                            # no key set: uses AWS default encryption, the
+                                             # supplied alias is never reused for PI
 ```
 
 Omitting both `kms_key_id` and `kms_key_alias` while `encryption.enabled` is `true`
@@ -501,6 +505,8 @@ Available targets:
 | [aws_vpc_security_group_ingress_rule.this_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [random_password.randompass](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/password) | resource |
 | [time_rotating.randompass](https://registry.terraform.io/providers/hashicorp/time/latest/docs/resources/rotating) | resource |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_policy_document.kms](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_kms_alias.cw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
 | [aws_kms_alias.perf](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
 | [aws_kms_alias.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_alias) | data source |
@@ -508,6 +514,7 @@ Available targets:
 | [aws_kms_key.perf](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
 | [aws_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/kms_key) | data source |
 | [aws_lambda_function.rotation_function](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/lambda_function) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 | [aws_secretsmanager_secret.rds_managed](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/secretsmanager_secret) | data source |
 | [aws_security_group.allow_sg](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/security_group) | data source |
