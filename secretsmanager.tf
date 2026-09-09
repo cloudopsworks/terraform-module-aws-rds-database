@@ -18,8 +18,18 @@ locals {
     dbInstanceIdentifier = module.this.db_instance_identifier
     sslmode              = "require"
   }
+  # The AWS managed master secret is created by RDS itself. Its friendly name has to be read
+  # back from the API: the last segment of its ARN carries the random suffix Secrets Manager
+  # appends, so it is not usable as a name by consumers
+  master_user_secret_name = one(data.aws_secretsmanager_secret.rds_managed[*].name)
+
   secret_name        = local.db_name != null ? format("%s/%s/%s/%s/master-rds-credentials", local.secret_store_path, var.settings.engine_type, module.this.db_instance_identifier, local.db_name) : null
   secret_description = local.db_name != null ? format("RDS Aurora Master credentials - %s - %s - %s - %s", local.master_username, var.settings.engine_type, module.this.db_instance_name, local.db_name) : null
+}
+
+data "aws_secretsmanager_secret" "rds_managed" {
+  count = local.managed_password ? 1 : 0
+  arn   = module.this.db_instance_master_user_secret_arn
 }
 
 # Secrets saving

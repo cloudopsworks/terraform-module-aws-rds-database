@@ -21,6 +21,11 @@ locals {
   # The module managed secret is keyed on the database name, so the whole Secrets Manager
   # path is disabled in that case.
   create_secret = local.generate_password && local.db_name != null
+  # RDS only picks up password_wo when password_wo_version changes, so the version is derived
+  # from the password itself. Any regeneration reaches the instance, whether it comes from the
+  # scheduled rotation or from a change to the generator, and the stored secret never drifts
+  # away from the live credentials
+  password_wo_version = local.generate_password ? parseint(substr(sha256(random_password.randompass[0].result), 0, 8), 16) : null
 }
 
 # Provisions RDS instance only if rds_provision=true
@@ -42,7 +47,7 @@ module "this" {
   db_name                                                = local.db_name
   username                                               = local.master_username
   password_wo                                            = local.generate_password ? random_password.randompass[0].result : null
-  password_wo_version                                    = local.generate_password ? time_rotating.randompass[0].unix : null
+  password_wo_version                                    = local.password_wo_version
   manage_master_user_password                            = local.managed_password
   manage_master_user_password_rotation                   = try(var.settings.managed_password_rotation, false)
   master_user_secret_kms_key_id                          = local.managed_password ? try(var.settings.password_secret_kms_key_id, null) : null

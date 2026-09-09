@@ -7,21 +7,14 @@
 #     Distributed Under Apache v2.0 License
 #
 
-data "aws_secretsmanager_secret" "rds_managed" {
-  count = try(var.settings.managed_password, false) && try(var.settings.hoop.enabled, false) ? 1 : 0
-  arn   = module.this.db_instance_master_user_secret_arn
-}
-
 locals {
-  master_user_secret_name_arn = try(split(":", module.this.db_instance_master_user_secret_arn), [])
-  master_user_secret_name     = length(local.master_user_secret_name_arn) - 1 >= 0 ? local.master_user_secret_name_arn[length(local.master_user_secret_name_arn) - 1] : ""
-  hoop_enabled                = try(var.settings.hoop.enabled, false)
-  hoop_secret_prefix          = try(var.settings.hoop.community, true) ? "_aws" : "_envs/aws"
-  hoop_secret_sep             = try(var.settings.hoop.community, true) ? ":" : "#"
-  hoop_is_postgres            = strcontains(try(var.settings.engine_type, ""), "postgres")
-  hoop_is_managed             = try(var.settings.managed_password, false)
-  hoop_managed_secret_name    = try(data.aws_secretsmanager_secret.rds_managed[0].name, "")
-  hoop_unmanaged_secret_name  = try(aws_secretsmanager_secret.rds[0].name, "")
+  hoop_enabled               = try(var.settings.hoop.enabled, false)
+  hoop_secret_prefix         = try(var.settings.hoop.community, true) ? "_aws" : "_envs/aws"
+  hoop_secret_sep            = try(var.settings.hoop.community, true) ? ":" : "#"
+  hoop_is_postgres           = strcontains(try(var.settings.engine_type, ""), "postgres")
+  hoop_is_managed            = try(var.settings.managed_password, false)
+  hoop_managed_secret_name   = local.master_user_secret_name != null ? local.master_user_secret_name : ""
+  hoop_unmanaged_secret_name = try(aws_secretsmanager_secret.rds[0].name, "")
 }
 
 output "hoop_connections" {

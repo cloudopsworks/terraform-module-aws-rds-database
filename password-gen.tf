@@ -12,9 +12,12 @@ resource "random_password" "randompass" {
   keepers = {
     rotation_rfc3339 = time_rotating.randompass[0].rotation_rfc3339
   }
-  length           = 20
-  special          = false
-  override_special = "=_-@"
+  length  = 20
+  special = false
+  # min_special is drawn from override_special even while special is false, so exactly one of
+  # these characters always lands in the password. RDS rejects "/", "\"" and "@" in a master
+  # password, and "@" also breaks URI style connection strings built from the secret
+  override_special = "=_-"
   min_upper        = 2
   min_special      = 1
   min_numeric      = 2
