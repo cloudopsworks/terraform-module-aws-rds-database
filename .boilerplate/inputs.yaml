@@ -24,6 +24,8 @@
 #   apply_immediately: true                      # (Optional) Apply changes immediately; default: true
 #   deletion_protection: false                   # (Optional) Enable deletion protection; default: false
 #   copy_tags_to_snapshot: true                  # (Optional) Copy tags to snapshots; default: true. Fallback: backup.copy_tags
+#   final_snapshot_generation: ""                # (Optional) Suffix appended to the "final-snap" final snapshot identifier prefix; default: "".
+#                                                #            Bump it (e.g. "001") to avoid colliding with a final snapshot from a previous destroy
 #   create_db_option_group: true                 # (Optional) Create DB option group; default: true
 #   restore_snapshot_identifier: ""              # (Optional) Snapshot ID to restore from. Alias: recovery.snapshot_identifier
 #   recovery:                                    # (Optional) Alternative location for the restore snapshot identifier

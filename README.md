@@ -151,6 +151,8 @@ settings:                                      # (Required) Root map for RDS ins
   apply_immediately: true                      # (Optional) Apply changes immediately; default: true
   deletion_protection: false                   # (Optional) Enable deletion protection; default: false
   copy_tags_to_snapshot: true                  # (Optional) Copy tags to snapshots; default: true. Fallback: backup.copy_tags
+  final_snapshot_generation: ""                # (Optional) Suffix appended to the "final-snap" final snapshot identifier prefix; default: "".
+                                               #            Bump it (e.g. "001") to avoid colliding with a final snapshot from a previous destroy
   create_db_option_group: true                 # (Optional) Create DB option group; default: true
   restore_snapshot_identifier: ""              # (Optional) Snapshot ID to restore from. Alias: recovery.snapshot_identifier
   recovery:                                    # (Optional) Alternative location for the restore snapshot identifier
@@ -469,7 +471,7 @@ Available targets:
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.11.1 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 6.35 |
 | <a name="requirement_random"></a> [random](#requirement\_random) | ~> 3.6 |
@@ -478,7 +480,7 @@ Available targets:
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 6.35 |
 | <a name="provider_random"></a> [random](#provider\_random) | ~> 3.6 |
 | <a name="provider_time"></a> [time](#provider\_time) | ~> 0.12 |
@@ -486,14 +488,14 @@ Available targets:
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | <a name="module_tags"></a> [tags](#module\_tags) | cloudopsworks/tags/local | 1.0.10 |
 | <a name="module_this"></a> [this](#module\_this) | terraform-aws-modules/rds/aws | ~> 7.0 |
 
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_db_event_subscription.events](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_event_subscription) | resource |
 | [aws_kms_alias.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_alias) | resource |
 | [aws_kms_key.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_key) | resource |
@@ -524,7 +526,7 @@ Available targets:
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_extra_tags"></a> [extra\_tags](#input\_extra\_tags) | Extra tags to add to the resources | `map(string)` | `{}` | no |
 | <a name="input_is_hub"></a> [is\_hub](#input\_is\_hub) | Is this a hub or spoke configuration? | `bool` | `false` | no |
 | <a name="input_org"></a> [org](#input\_org) | Organization details | <pre>object({<br/>    organization_name = string<br/>    organization_unit = string<br/>    environment_type  = string<br/>    environment_name  = string<br/>  })</pre> | n/a | yes |
@@ -536,7 +538,7 @@ Available targets:
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_hoop_connections"></a> [hoop\_connections](#output\_hoop\_connections) | Hoop connection definitions to be consumed by terraform-module-hoop-connection, null when settings.hoop.enabled is false |
 | <a name="output_rds_enhanced_monitoring_iam_role_arn"></a> [rds\_enhanced\_monitoring\_iam\_role\_arn](#output\_rds\_enhanced\_monitoring\_iam\_role\_arn) | The ARN of the enhanced monitoring IAM role, null when settings.monitoring.enabled is false |
 | <a name="output_rds_enhanced_monitoring_iam_role_name"></a> [rds\_enhanced\_monitoring\_iam\_role\_name](#output\_rds\_enhanced\_monitoring\_iam\_role\_name) | The name of the enhanced monitoring IAM role, null when settings.monitoring.enabled is false |

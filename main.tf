@@ -66,7 +66,7 @@ module "this" {
   options                                                = try(var.settings.options, [])
   skip_final_snapshot                                    = false
   snapshot_identifier                                    = local.snapshot_identifier
-  final_snapshot_identifier_prefix                       = "final-snap"
+  final_snapshot_identifier_prefix                       = format("final-snap%s", try(var.settings.final_snapshot_generation, ""))
   copy_tags_to_snapshot                                  = try(var.settings.copy_tags_to_snapshot, var.settings.backup.copy_tags, true)
   deletion_protection                                    = try(var.settings.deletion_protection, false)
   apply_immediately                                      = try(var.settings.apply_immediately, true)
