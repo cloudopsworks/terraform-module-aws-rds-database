@@ -80,6 +80,8 @@
 #   major_engine_version: "15"         # (Required) The major engine version for the RDS instance
 #   create_db_option_group: true       # (Optional) If true, the DB option group will be created, defaults to true
 #   copy_tags_to_snapshot: true        # (Optional) If true, the tags will be copied to the snapshot, defaults to true
+#   final_snapshot_generation: "001"   # (Optional) Suffix appended to the "final-snap" final snapshot identifier prefix, defaults to "".
+#                                      #            Bump it (e.g. "001", "002") to avoid colliding with a final snapshot left behind by a previous destroy
 #   parameters: []                     # (Optional) The parameters for the RDS instance, defaults to []
 #   options: []                        # (Optional) The options for the RDS instance, defaults to []
 #   restore_snapshot_identifier: "..." # (Optional) The snapshot identifier to restore the RDS instance from. Alias: recovery.snapshot_identifier
